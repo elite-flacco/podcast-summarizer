@@ -9,7 +9,6 @@ import {
   parseDuration,
 } from './youtube';
 import { summarizePodcast } from './openai';
-import { Video, Summary } from '../types/database';
 
 export interface ProcessingResult {
   channelsProcessed: number;
@@ -22,6 +21,9 @@ export interface ProcessingResult {
  * Main processor that handles video fetching, summarization, and syncing
  */
 export class PodcastProcessor {
+  private readonly SUMMARY_TIMEOUT_MS = 180000;
+  private readonly TRANSCRIPT_TIMEOUT_MS = 60000;
+
   constructor(
     private config: WorkerConfig,
     private supabase: SupabaseClient,
@@ -168,16 +170,14 @@ export class PodcastProcessor {
 
     const metadata = await getChannelDetails(channel.id);
 
-    const { error: upsertError } = await this.supabase
-      .from('channels')
-      .upsert({
-        id: channel.id,
-        title: metadata?.title || channel.name,
-        description: metadata?.description || null,
-        thumbnail_url: metadata?.thumbnailUrl || null,
-        subscriber_count: metadata?.subscriberCount || null,
-        channel_summary: null,
-      });
+    const { error: upsertError } = await this.supabase.from('channels').upsert({
+      id: channel.id,
+      title: metadata?.title || channel.name,
+      description: metadata?.description || null,
+      thumbnail_url: metadata?.thumbnailUrl || null,
+      subscriber_count: metadata?.subscriberCount || null,
+      channel_summary: null,
+    });
 
     if (upsertError) {
       throw new Error(
@@ -197,6 +197,8 @@ export class PodcastProcessor {
     video: any,
     channel: ChannelConfig
   ): Promise<void> {
+    this.logger.info(`Upserting metadata for ${video.title}...`);
+
     // 1. Upsert video to database
     const { error: videoError } = await this.supabase.from('videos').upsert({
       id: video.id,
@@ -215,57 +217,87 @@ export class PodcastProcessor {
       throw new Error(`Failed to upsert video: ${videoError.message}`);
     }
 
-    // 2. Fetch transcript
+    // 2. Get or fetch transcript
     let transcript: string;
-    try {
-      transcript = await getVideoTranscript(video.id);
 
-      // Store transcript
-      const { error: transcriptError } = await this.supabase
-        .from('transcripts')
-        .upsert({
-          video_id: video.id,
-          content: transcript,
-          language: 'en',
-        });
+    // Check if transcript already exists in database
+    const { data: existingTranscript } = await this.supabase
+      .from('transcripts')
+      .select('content')
+      .eq('video_id', video.id)
+      .maybeSingle();
 
-      if (transcriptError) {
-        throw new Error(
-          `Failed to store transcript: ${transcriptError.message}`
+    if (existingTranscript?.content) {
+      this.logger.info(`Using existing transcript for ${video.title}`);
+      transcript = existingTranscript.content;
+    } else {
+      // Fetch new transcript from YouTube
+      try {
+        this.logger.info(`Fetching transcript for ${video.title}...`);
+        transcript = await this.withTimeout(
+          getVideoTranscript(video.id),
+          this.TRANSCRIPT_TIMEOUT_MS,
+          `transcript fetch for ${video.title}`
         );
-      }
 
-      // Update video to mark transcript as fetched
-      await this.supabase
-        .from('videos')
-        .update({
-          has_transcript: true,
-          transcript_fetched_at: new Date().toISOString(),
-        })
-        .eq('id', video.id);
-    } catch (error: any) {
-      // Skip videos without transcripts
-      this.logger.warn(`No transcript for ${video.title}, skipping summary`);
-      throw new Error(`No transcript available: ${error.message}`);
+        // Store transcript
+        const { error: transcriptError } = await this.supabase
+          .from('transcripts')
+          .upsert(
+            {
+              video_id: video.id,
+              content: transcript,
+              language: 'en',
+            },
+            { onConflict: 'video_id' }
+          );
+
+        if (transcriptError) {
+          throw new Error(
+            `Failed to store transcript: ${transcriptError.message}`
+          );
+        }
+
+        // Update video to mark transcript as fetched
+        await this.supabase
+          .from('videos')
+          .update({
+            has_transcript: true,
+            transcript_fetched_at: new Date().toISOString(),
+          })
+          .eq('id', video.id);
+      } catch (error: any) {
+        // Skip videos without transcripts
+        this.logger.warn(
+          `Skipping summary for ${video.title} due to transcript error: ${error.message}`
+        );
+        throw new Error(`No transcript available: ${error.message}`);
+      }
     }
 
+
     // 3. Generate AI summary
-    const summary = await summarizePodcast(
-      video.title,
-      transcript,
-      channel.name
+    this.logger.info(`Generating summary for ${video.title}...`);
+    const summary = await this.withTimeout(
+      summarizePodcast(video.title, transcript, channel.name),
+      this.SUMMARY_TIMEOUT_MS,
+      `OpenAI summary for ${video.title}`
     );
+    this.logger.info(`Summary generated for ${video.title}`);
 
     // 4. Store summary
     const { error: summaryError } = await this.supabase
       .from('summaries')
-      .upsert({
-        video_id: video.id,
-        summary: summary.summary,
-        key_topics: summary.keyTopics,
-        highlights: summary.highlights,
-        model: 'gpt-5',
-      });
+      .upsert(
+        {
+          video_id: video.id,
+          summary: summary.summary,
+          key_topics: summary.keyTopics,
+          highlights: summary.highlights,
+          model: 'gpt-5',
+        },
+        { onConflict: 'video_id' }
+      );
 
     if (summaryError) {
       throw new Error(`Failed to store summary: ${summaryError.message}`);
@@ -273,14 +305,14 @@ export class PodcastProcessor {
   }
 
   /**
-   * Get list of existing video IDs from database
+   * Get list of video IDs that have been fully processed (have transcript and summary)
    */
   private async getExistingVideoIds(videoIds: string[]): Promise<string[]> {
     if (videoIds.length === 0) return [];
 
     const { data, error } = await this.supabase
       .from('videos')
-      .select('id')
+      .select('id, has_transcript, summaries(video_id)')
       .in('id', videoIds);
 
     if (error) {
@@ -288,7 +320,10 @@ export class PodcastProcessor {
       return [];
     }
 
-    return (data || []).map((v) => v.id);
+    // Only return videos that have both transcript and summary
+    return (data || [])
+      .filter((v: any) => v.has_transcript && v.summaries)
+      .map((v) => v.id);
   }
 
   /**
@@ -369,5 +404,26 @@ export class PodcastProcessor {
 
     // Sync to Google Docs
     await this.docs.syncDocument(channelEpisodesMap);
+  }
+
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    ms: number,
+    operation: string
+  ): Promise<T> {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(`${operation} timed out after ${ms / 1000}s`));
+      }, ms);
+    });
+
+    try {
+      return await Promise.race([promise, timeoutPromise]);
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
   }
 }
