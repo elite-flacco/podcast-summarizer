@@ -223,13 +223,27 @@ export class PodcastProcessor {
     // Check if transcript already exists in database
     const { data: existingTranscript } = await this.supabase
       .from('transcripts')
-      .select('content')
+      .select('content, created_at')
       .eq('video_id', video.id)
       .maybeSingle();
 
     if (existingTranscript?.content) {
       this.logger.info(`Using existing transcript for ${video.title}`);
       transcript = existingTranscript.content;
+      const { error: transcriptFlagError } = await this.supabase
+        .from('videos')
+        .update({
+          has_transcript: true,
+          transcript_fetched_at:
+            existingTranscript.created_at || new Date().toISOString(),
+        })
+        .eq('id', video.id);
+
+      if (transcriptFlagError) {
+        throw new Error(
+          `Failed to mark transcript fetched: ${transcriptFlagError.message}`
+        );
+      }
     } else {
       // Fetch new transcript from YouTube
       try {
