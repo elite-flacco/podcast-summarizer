@@ -1,4 +1,4 @@
-name: Sync Podcasts to Google Docs
+name: Update Podcast Summaries
 
 on:
   schedule:
@@ -36,7 +36,7 @@ jobs:
           GOOGLE_DOCS_DOCUMENT_ID: ${{ secrets.GOOGLE_DOCS_DOCUMENT_ID }}
           GOOGLE_DOCS_CLIENT_EMAIL: ${{ secrets.GOOGLE_DOCS_CLIENT_EMAIL }}
           GOOGLE_DOCS_PRIVATE_KEY: ${{ secrets.GOOGLE_DOCS_PRIVATE_KEY }}
-          DAYS_TO_LOOK_BACK: 30
+          DAYS_TO_LOOK_BACK: 10
           MAX_RESULTS_PER_CHANNEL: 10
         run: npm start
 

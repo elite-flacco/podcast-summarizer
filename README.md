@@ -1,6 +1,6 @@
-# Pod Worker
+# Podcast Summarizer
 
-Standalone worker that syncs YouTube podcast episodes to Google Docs with AI-generated summaries.
+Automated process that pulls your YouTube podcasts, transcribes them, and drops AI-generated summaries into a Google Doc.
 
 ## Overview
 
@@ -559,6 +559,5 @@ Built using:
 - [@danielxceron/youtube-transcript](https://github.com/danielxceron/youtube-transcript)
 - [OpenAI API](https://platform.openai.com/)
 - [Supabase](https://supabase.com/)
-
 
 
