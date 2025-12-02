@@ -84,16 +84,19 @@ To find a channel ID:
 4. **Set Up Database Schema**:
    - Go to SQL Editor (left sidebar)
    - Click "New query"
-   - Copy the schema from `docs/schema.sql` in the main Pod repo, or use this schema:
+   - Copy the contents of `schema.sql` from this repo, or use the schema below:
 
    <details>
    <summary>Click to expand database schema</summary>
 
    ```sql
+   -- Pod Worker Database Schema
+   -- This is a minimal schema for the worker - only includes tables needed for operation
+
    -- Enable UUID extension
    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-   -- Channels table (shared across users)
+   -- Channels table (stores YouTube channel metadata)
    CREATE TABLE channels (
      id TEXT PRIMARY KEY,
      title TEXT NOT NULL,
@@ -105,17 +108,7 @@ To find a channel ID:
      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
    );
 
-   -- User channels (user's selected podcast channels)
-   CREATE TABLE user_channels (
-     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-     channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
-     is_active BOOLEAN NOT NULL DEFAULT true,
-     added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-     UNIQUE(user_id, channel_id)
-   );
-
-   -- Videos table
+   -- Videos table (stores YouTube video metadata)
    CREATE TABLE videos (
      id TEXT PRIMARY KEY,
      channel_id TEXT NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
@@ -131,7 +124,7 @@ To find a channel ID:
      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
    );
 
-   -- Transcripts table
+   -- Transcripts table (stores full video transcripts)
    CREATE TABLE transcripts (
      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
      video_id TEXT NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
@@ -141,7 +134,7 @@ To find a channel ID:
      UNIQUE(video_id)
    );
 
-   -- Summaries table
+   -- Summaries table (stores AI-generated summaries)
    CREATE TABLE summaries (
      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
      video_id TEXT NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
@@ -154,26 +147,11 @@ To find a channel ID:
      UNIQUE(video_id)
    );
 
-   -- User video progress
-   CREATE TABLE user_video_progress (
-     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-     video_id TEXT NOT NULL REFERENCES videos(id) ON DELETE CASCADE,
-     watched BOOLEAN NOT NULL DEFAULT false,
-     watched_at TIMESTAMPTZ,
-     progress_seconds INTEGER NOT NULL DEFAULT 0,
-     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-     UNIQUE(user_id, video_id)
-   );
-
    -- Indexes for performance
    CREATE INDEX idx_videos_channel_id ON videos(channel_id);
    CREATE INDEX idx_videos_published_at ON videos(published_at DESC);
    CREATE INDEX idx_transcripts_video_id ON transcripts(video_id);
    CREATE INDEX idx_summaries_video_id ON summaries(video_id);
-   CREATE INDEX idx_user_channels_user_id ON user_channels(user_id);
-   CREATE INDEX idx_user_video_progress_user_id ON user_video_progress(user_id);
 
    -- Updated at trigger function
    CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -194,47 +172,19 @@ To find a channel ID:
    CREATE TRIGGER update_summaries_updated_at BEFORE UPDATE ON summaries
      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-   CREATE TRIGGER update_user_video_progress_updated_at BEFORE UPDATE ON user_video_progress
-     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
    -- Row Level Security (RLS) policies
+   -- Note: The worker uses service_role key which bypasses ALL RLS policies
+   -- RLS is enabled for security best practices, but policies are minimal since only service_role accesses this DB
    ALTER TABLE channels ENABLE ROW LEVEL SECURITY;
-   ALTER TABLE user_channels ENABLE ROW LEVEL SECURITY;
    ALTER TABLE videos ENABLE ROW LEVEL SECURITY;
    ALTER TABLE transcripts ENABLE ROW LEVEL SECURITY;
    ALTER TABLE summaries ENABLE ROW LEVEL SECURITY;
-   ALTER TABLE user_video_progress ENABLE ROW LEVEL SECURITY;
 
-   -- Channels: Anyone can view, authenticated users can modify
-   CREATE POLICY "Channels are viewable by everyone" ON channels FOR SELECT USING (true);
-   CREATE POLICY "Authenticated users can insert channels" ON channels FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-   CREATE POLICY "Authenticated users can update channels" ON channels FOR UPDATE USING (auth.role() = 'authenticated');
-
-   -- User channels: Users can only access their own
-   CREATE POLICY "Users can view own channels" ON user_channels FOR SELECT USING (auth.uid() = user_id);
-   CREATE POLICY "Users can insert own channels" ON user_channels FOR INSERT WITH CHECK (auth.uid() = user_id);
-   CREATE POLICY "Users can update own channels" ON user_channels FOR UPDATE USING (auth.uid() = user_id);
-   CREATE POLICY "Users can delete own channels" ON user_channels FOR DELETE USING (auth.uid() = user_id);
-
-   -- Videos: Anyone can view, authenticated users can modify
-   CREATE POLICY "Videos are viewable by everyone" ON videos FOR SELECT USING (true);
-   CREATE POLICY "Authenticated users can insert videos" ON videos FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-   CREATE POLICY "Authenticated users can update videos" ON videos FOR UPDATE USING (auth.role() = 'authenticated');
-
-   -- Transcripts: Anyone can view, authenticated users can modify
-   CREATE POLICY "Transcripts are viewable by everyone" ON transcripts FOR SELECT USING (true);
-   CREATE POLICY "Authenticated users can insert transcripts" ON transcripts FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-   CREATE POLICY "Authenticated users can update transcripts" ON transcripts FOR UPDATE USING (auth.role() = 'authenticated');
-
-   -- Summaries: Anyone can view, authenticated users can modify
-   CREATE POLICY "Summaries are viewable by everyone" ON summaries FOR SELECT USING (true);
-   CREATE POLICY "Authenticated users can insert summaries" ON summaries FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-   CREATE POLICY "Authenticated users can update summaries" ON summaries FOR UPDATE USING (auth.role() = 'authenticated');
-
-   -- User video progress: Users can only access their own
-   CREATE POLICY "Users can view own progress" ON user_video_progress FOR SELECT USING (auth.uid() = user_id);
-   CREATE POLICY "Users can insert own progress" ON user_video_progress FOR INSERT WITH CHECK (auth.uid() = user_id);
-   CREATE POLICY "Users can update own progress" ON user_video_progress FOR UPDATE USING (auth.uid() = user_id);
+   -- Allow public read access (useful for Supabase dashboard viewing)
+   CREATE POLICY "Public read access" ON channels FOR SELECT USING (true);
+   CREATE POLICY "Public read access" ON videos FOR SELECT USING (true);
+   CREATE POLICY "Public read access" ON transcripts FOR SELECT USING (true);
+   CREATE POLICY "Public read access" ON summaries FOR SELECT USING (true);
    ```
    </details>
 
@@ -244,7 +194,7 @@ To find a channel ID:
 
 5. **Verify Setup**:
    - Go to Table Editor
-   - You should see tables: `channels`, `videos`, `transcripts`, `summaries`, `user_channels`, `user_video_progress`
+   - You should see tables: `channels`, `videos`, `transcripts`, `summaries`
 
 **Note**: The worker uses the `service_role` key which bypasses Row Level Security (RLS), so it can read/write all tables without user authentication.
 
