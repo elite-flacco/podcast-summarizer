@@ -21,9 +21,7 @@ export interface WorkerConfig {
     apiKey: string;
     maxResultsPerChannel: number;
   };
-  openai: {
-    apiKey: string;
-  };
+  openai: OpenAIConfig;
   googleDocs: {
     documentId: string;
     credentials: {
@@ -34,6 +32,12 @@ export interface WorkerConfig {
   processing: {
     daysToLookBack: number;
   };
+}
+
+export interface OpenAIConfig {
+  apiKey: string;
+  model: string;
+  maxOutputTokens: number;
 }
 
 /**
@@ -47,7 +51,7 @@ export function loadConfig(): WorkerConfig {
   try {
     const configFile = readFileSync(configPath, 'utf-8');
     channelsConfig = JSON.parse(configFile);
-  } catch (error) {
+  } catch {
     throw new Error(
       `Failed to load channels.json from ${configPath}. Make sure the file exists.`
     );
@@ -70,6 +74,16 @@ export function loadConfig(): WorkerConfig {
     }
   }
 
+  const openaiModel = process.env.OPENAI_MODEL?.trim() || 'gpt-5-mini';
+  const parsedOpenaiMaxTokens = parseInt(
+    process.env.OPENAI_MAX_OUTPUT_TOKENS || '100000',
+    10
+  );
+  const openaiMaxOutputTokens =
+    Number.isNaN(parsedOpenaiMaxTokens) || parsedOpenaiMaxTokens <= 0
+      ? 100000
+      : parsedOpenaiMaxTokens;
+
   return {
     channels: channelsConfig.channels,
     supabase: {
@@ -85,6 +99,8 @@ export function loadConfig(): WorkerConfig {
     },
     openai: {
       apiKey: process.env.OPENAI_API_KEY!,
+      model: openaiModel,
+      maxOutputTokens: openaiMaxOutputTokens,
     },
     googleDocs: {
       documentId: process.env.GOOGLE_DOCS_DOCUMENT_ID!,

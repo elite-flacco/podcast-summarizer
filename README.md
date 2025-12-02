@@ -299,21 +299,10 @@ To find a channel ID:
 7. Save it securely
 
 **Important Notes**:
-- **GPT-5 Access Required**: This worker uses GPT-5 (`gpt-5` model). If you don't have access yet:
-  - You'll need to be on an eligible tier (Scale tier or above)
-  - Check [OpenAI's pricing page](https://openai.com/api/pricing/) for current model availability
-  - Alternative: Modify `src/openai.ts` to use `gpt-4o` instead (line 7: change `'gpt-5'` to `'gpt-4o'`)
+- **Default model**: Uses GPT-5 (`gpt-5-mini`). Override with `OPENAI_MODEL` (e.g., `gpt-4o`) if you don't have GPT-5 access.
+- **Max tokens**: Override with `OPENAI_MAX_OUTPUT_TOKENS` (defaults to `100000`).
 - **Cost Estimate**: ~$25-50/month for 50 episodes (depends on transcript length)
-- **Add Credits**: Go to Settings → Billing to add credits/payment method
-
-**If you don't have GPT-5 access**, edit `src/openai.ts`:
-```typescript
-// Change line 7 from:
-const MODEL_ID = 'gpt-5';
-
-// To:
-const MODEL_ID = 'gpt-4o';  // or 'gpt-4-turbo'
-```
+- **Add Credits**: Go to Settings and Billing to add credits/payment method
 
 ### 6. Set Up Google Cloud Service Account
 
@@ -361,6 +350,8 @@ YOUTUBE_API_KEY=your-youtube-api-key
 
 # OpenAI
 OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=gpt-5-mini
+OPENAI_MAX_OUTPUT_TOKENS=100000
 
 # Google Docs
 GOOGLE_DOCS_DOCUMENT_ID=your-document-id
@@ -404,12 +395,14 @@ This will:
    - Go to Settings > Secrets and variables > Actions
    - Add repository secrets:
      - `SUPABASE_URL`
-     - `SUPABASE_SERVICE_ROLE_KEY`
-     - `YOUTUBE_API_KEY`
-     - `OPENAI_API_KEY`
-     - `GOOGLE_DOCS_DOCUMENT_ID`
-     - `GOOGLE_DOCS_CLIENT_EMAIL`
-     - `GOOGLE_DOCS_PRIVATE_KEY`
+    - `SUPABASE_SERVICE_ROLE_KEY`
+    - `YOUTUBE_API_KEY`
+    - `OPENAI_API_KEY`
+    - `OPENAI_MODEL` (optional)
+    - `OPENAI_MAX_OUTPUT_TOKENS` (optional)
+    - `GOOGLE_DOCS_DOCUMENT_ID`
+    - `GOOGLE_DOCS_CLIENT_EMAIL`
+    - `GOOGLE_DOCS_PRIVATE_KEY`
 
 4. **Enable GitHub Actions** in repository settings
 
@@ -472,6 +465,8 @@ Link: https://youtube.com/watch?v=abc123
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (bypasses RLS) |
 | `YOUTUBE_API_KEY` | YouTube Data API v3 key |
 | `OPENAI_API_KEY` | OpenAI API key with GPT-5 access |
+| `OPENAI_MODEL` | Model to use for summaries (default: `gpt-5-mini`) |
+| `OPENAI_MAX_OUTPUT_TOKENS` | Max tokens per response (default: `100000`) |
 | `GOOGLE_DOCS_DOCUMENT_ID` | ID of your Google Doc |
 | `GOOGLE_DOCS_CLIENT_EMAIL` | Service account email |
 | `GOOGLE_DOCS_PRIVATE_KEY` | Service account private key |
@@ -564,3 +559,6 @@ Built using:
 - [@danielxceron/youtube-transcript](https://github.com/danielxceron/youtube-transcript)
 - [OpenAI API](https://platform.openai.com/)
 - [Supabase](https://supabase.com/)
+
+
+

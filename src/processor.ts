@@ -275,11 +275,15 @@ export class PodcastProcessor {
       }
     }
 
-
     // 3. Generate AI summary
     this.logger.info(`Generating summary for ${video.title}...`);
     const summary = await this.withTimeout(
-      summarizePodcast(video.title, transcript, channel.name),
+      summarizePodcast(
+        video.title,
+        transcript,
+        channel.name,
+        this.config.openai
+      ),
       this.SUMMARY_TIMEOUT_MS,
       `OpenAI summary for ${video.title}`
     );
@@ -294,7 +298,7 @@ export class PodcastProcessor {
           summary: summary.summary,
           key_topics: summary.keyTopics,
           highlights: summary.highlights,
-          model: 'gpt-5',
+          model: this.config.openai.model,
         },
         { onConflict: 'video_id' }
       );

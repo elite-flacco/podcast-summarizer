@@ -1,11 +1,18 @@
 import OpenAI from 'openai';
+import type { OpenAIConfig } from './config';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'placeholder',
-});
+let cachedClient: { apiKey: string; client: OpenAI } | null = null;
 
-const MODEL_ID = 'gpt-5';
-const MAX_OUTPUT_TOKENS = 100000;
+function getOpenAIClient(apiKey: string): OpenAI {
+  if (!cachedClient || cachedClient.apiKey !== apiKey) {
+    cachedClient = {
+      apiKey,
+      client: new OpenAI({ apiKey }),
+    };
+  }
+
+  return cachedClient.client;
+}
 
 export interface PodcastSummary {
   title: string;
@@ -21,11 +28,14 @@ export interface PodcastSummary {
 export async function summarizePodcast(
   title: string,
   transcript: string,
-  channelName: string
+  channelName: string,
+  openaiConfig: OpenAIConfig
 ): Promise<PodcastSummary> {
   try {
+    const openai = getOpenAIClient(openaiConfig.apiKey);
+
     const response = await openai.responses.create({
-      model: MODEL_ID,
+      model: openaiConfig.model,
       input: [
         {
           role: 'system',
@@ -95,7 +105,7 @@ export async function summarizePodcast(
           },
         },
       },
-      max_output_tokens: MAX_OUTPUT_TOKENS,
+      max_output_tokens: openaiConfig.maxOutputTokens,
     });
 
     const responseText = response.output_text;
@@ -124,7 +134,8 @@ export async function summarizePodcast(
  */
 export async function summarizeChannel(
   channelName: string,
-  episodeSummaries: string[]
+  episodeSummaries: string[],
+  openaiConfig: OpenAIConfig
 ): Promise<string> {
   const prompt = `You are analyzing recent podcast episodes from the channel "${channelName}".
 
@@ -135,8 +146,10 @@ ${episodeSummaries.map((summary, i) => `Episode ${i + 1}: ${summary}`).join('\n\
 Provide a brief 2-3 sentence overview of what this podcast channel is about based on these recent episodes.`;
 
   try {
+    const openai = getOpenAIClient(openaiConfig.apiKey);
+
     const response = await openai.responses.create({
-      model: MODEL_ID,
+      model: openaiConfig.model,
       input: [
         {
           role: 'system',
@@ -152,7 +165,7 @@ Provide a brief 2-3 sentence overview of what this podcast channel is about base
           content: [{ type: 'input_text', text: prompt }],
         },
       ],
-      max_output_tokens: 200,
+      max_output_tokens: Math.min(openaiConfig.maxOutputTokens, 200),
     });
 
     const responseText = response.output_text;
