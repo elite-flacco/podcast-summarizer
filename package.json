@@ -1,0 +1,41 @@
+{
+  "name": "pod-worker",
+  "version": "1.0.0",
+  "description": "Standalone worker to sync YouTube podcasts to Google Docs",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "keywords": [
+    "youtube",
+    "podcasts",
+    "ai",
+    "summaries",
+    "google-docs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@danielxceron/youtube-transcript": "^1.2.3",
+    "@supabase/supabase-js": "^2.84.0",
+    "dotenv": "^17.2.3",
+    "googleapis": "^166.0.0",
+    "openai": "^6.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@typescript-eslint/eslint-plugin": "^8",
+    "@typescript-eslint/parser": "^8",
+    "eslint": "^9",
+    "prettier": "^3.6.2",
+    "ts-node": "^10",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

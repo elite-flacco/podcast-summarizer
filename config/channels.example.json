@@ -1,0 +1,14 @@
+{
+  "channels": [
+    {
+      "id": "UCBJycsmduvYEL83R_U4JriQ",
+      "name": "Example Podcast Channel 1",
+      "enabled": true
+    },
+    {
+      "id": "UC2D2CMWXMOVWx7giW1n3LIg",
+      "name": "Example Podcast Channel 2",
+      "enabled": false
+    }
+  ]
+}
