@@ -44,16 +44,29 @@ export interface OpenAIConfig {
  * Load configuration from environment variables and channels.json
  */
 export function loadConfig(): WorkerConfig {
-  // Load channels from config file
+  // Load channels from env first (to avoid committing secrets); fall back to file
   const configPath = join(process.cwd(), 'config', 'channels.json');
+  const channelsJson =
+    process.env.CHANNELS_JSON ||
+    (process.env.CHANNELS_JSON_BASE64
+      ? Buffer.from(process.env.CHANNELS_JSON_BASE64, 'base64').toString(
+          'utf-8'
+        )
+      : undefined);
+
   let channelsConfig: ChannelsConfigFile;
 
   try {
-    const configFile = readFileSync(configPath, 'utf-8');
-    channelsConfig = JSON.parse(configFile);
+    const raw =
+      channelsJson !== undefined
+        ? channelsJson
+        : readFileSync(configPath, 'utf-8');
+    channelsConfig = JSON.parse(raw);
   } catch {
+    const source = channelsJson !== undefined ? 'environment' : configPath;
     throw new Error(
-      `Failed to load channels.json from ${configPath}. Make sure the file exists.`
+      `Failed to load channels configuration from ${source}. ` +
+        'Provide CHANNELS_JSON/CHANNELS_JSON_BASE64 or add config/channels.json.'
     );
   }
 

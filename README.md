@@ -26,18 +26,6 @@ This worker automatically:
 - OpenAI API key (GPT-5 access required)
 - Google Cloud service account with Docs API access (free)
 
-**Note**: This worker can be used standalone - you don't need the main Pod app! Just set up Supabase with the provided schema.
-
-## How It Works (Public Repo + Private Config)
-
-This repository is designed to be public so others can fork and use it, while keeping your personal channels private:
-
-- ✅ **Committed**: `channels.example.json` with example channels
-- 🔒 **Private**: `channels.json` (your actual channels) is gitignored
-- 🔑 **Secret**: All credentials stored in GitHub Secrets or local `.env`
-
-When you push to GitHub, only the example file is included. Your personal `channels.json` stays on your machine and in GitHub Actions secrets.
-
 ## Setup
 
 ### 1. Fork/Clone the Repository
@@ -50,27 +38,21 @@ npm install
 
 ### 2. Configure Channels
 
-Copy the example file and edit it with your YouTube channels:
+Pick one of these approaches:
 
-```bash
-cp config/channels.example.json config/channels.json
-```
+- **Recommended for GitHub Actions/public repo**: set `CHANNELS_JSON` (or `CHANNELS_JSON_BASE64`) in your `.env` and in GitHub Secrets. Example:
 
-Then edit `config/channels.json`:
+  ```bash
+  CHANNELS_JSON='{"channels":[{"id":"UCBJycsmduvYEL83R_U4JriQ","name":"Lex Fridman Podcast","enabled":true}]}'
+  ```
 
-```json
-{
-  "channels": [
-    {
-      "id": "UCBJycsmduvYEL83R_U4JriQ",
-      "name": "Lex Fridman Podcast",
-      "enabled": true
-    }
-  ]
-}
-```
+- **Local file for development**: copy the example file and edit it:
 
-**Note**: `channels.json` is gitignored, so your personal channel list stays private.
+  ```bash
+  cp config/channels.example.json config/channels.json
+  ```
+
+  Then edit `config/channels.json` with your channels. The file is gitignored so it stays private. You can remove the entry from `.gitignore` if you intend to commit it—in that case you don’t need to set `CHANNELS_JSON`/`CHANNELS_JSON_BASE64` in GitHub secrets.
 
 To find a channel ID:
 1. Go to the channel's YouTube page
@@ -361,6 +343,10 @@ GOOGLE_DOCS_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-
 # Processing
 DAYS_TO_LOOK_BACK=30
 MAX_RESULTS_PER_CHANNEL=10
+
+# Channels (choose one)
+# CHANNELS_JSON='{"channels":[{"id":"UCBJycsmduvYEL83R_U4JriQ","name":"Lex Fridman Podcast","enabled":true}]}'
+# CHANNELS_JSON_BASE64=eyJjaGFubmVscyI6W3siaWQiOiJVQ0JKeWNzbWR1dllFTDgzUl9VNUpyaVEiLCJuYW1lIjoiTGV4IEZyaWRtYW4gUG9kY2FzdCIsImVuYWJsZWQiOnRydWV9XX0=
 ```
 
 ### 9. Test Locally
@@ -394,15 +380,16 @@ This will:
 3. **Add GitHub Secrets**:
    - Go to Settings > Secrets and variables > Actions
    - Add repository secrets:
+     - `CHANNELS_JSON` (or `CHANNELS_JSON_BASE64`)
      - `SUPABASE_URL`
-    - `SUPABASE_SERVICE_ROLE_KEY`
-    - `YOUTUBE_API_KEY`
-    - `OPENAI_API_KEY`
-    - `OPENAI_MODEL` (optional)
-    - `OPENAI_MAX_OUTPUT_TOKENS` (optional)
-    - `GOOGLE_DOCS_DOCUMENT_ID`
-    - `GOOGLE_DOCS_CLIENT_EMAIL`
-    - `GOOGLE_DOCS_PRIVATE_KEY`
+     - `SUPABASE_SERVICE_ROLE_KEY`
+     - `YOUTUBE_API_KEY`
+     - `OPENAI_API_KEY`
+     - `OPENAI_MODEL` (optional)
+     - `OPENAI_MAX_OUTPUT_TOKENS` (optional)
+     - `GOOGLE_DOCS_DOCUMENT_ID`
+     - `GOOGLE_DOCS_CLIENT_EMAIL`
+     - `GOOGLE_DOCS_PRIVATE_KEY`
 
 4. **Enable GitHub Actions** in repository settings
 
@@ -416,7 +403,7 @@ This will:
 - README and documentation
 
 **What Stays Private**:
-- Your `channels.json` (gitignored)
+- Your channel list via `CHANNELS_JSON`/`CHANNELS_JSON_BASE64` secrets (or a local `channels.json`, which is gitignored unless you choose to remove it)
 - Your `.env` file (gitignored)
 - GitHub Secrets (encrypted)
 
@@ -465,6 +452,8 @@ Link: https://youtube.com/watch?v=abc123
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key (bypasses RLS) |
 | `YOUTUBE_API_KEY` | YouTube Data API v3 key |
 | `OPENAI_API_KEY` | OpenAI API key with GPT-5 access |
+| `CHANNELS_JSON` | Inline JSON for your channels (preferred for CI) |
+| `CHANNELS_JSON_BASE64` | Base64-encoded channels JSON (alternative to `CHANNELS_JSON`) |
 | `OPENAI_MODEL` | Model to use for summaries (default: `gpt-5-mini`) |
 | `OPENAI_MAX_OUTPUT_TOKENS` | Max tokens per response (default: `100000`) |
 | `GOOGLE_DOCS_DOCUMENT_ID` | ID of your Google Doc |
@@ -489,6 +478,10 @@ Link: https://youtube.com/watch?v=abc123
 ### "Missing required environment variable"
 - Ensure all required environment variables are set in `.env`
 - For GitHub Actions, check repository secrets
+
+### "Failed to load channels configuration"
+- Provide `CHANNELS_JSON` (or `CHANNELS_JSON_BASE64`) in `.env`/Secrets, or add a local `config/channels.json`
+- Confirm the JSON is valid and includes a `channels` array
 
 ### "Failed to fetch transcript"
 - Video may not have public captions
@@ -559,5 +552,3 @@ Built using:
 - [@danielxceron/youtube-transcript](https://github.com/danielxceron/youtube-transcript)
 - [OpenAI API](https://platform.openai.com/)
 - [Supabase](https://supabase.com/)
-
-
