@@ -59,7 +59,7 @@ export class DocsWriter {
       requests.push({
         insertText: {
           location: { index: currentIndex },
-          text: `${channelName}\n`,
+          text: `${channelName}\n\n`,
         },
       });
 
@@ -76,11 +76,13 @@ export class DocsWriter {
         },
       });
 
-      currentIndex += channelName.length + 1;
+      currentIndex += channelName.length + 2;
 
       // Add episodes for this channel
       for (const episode of episodes) {
-        const episodeContent = this.formatEpisode(episode);
+        const episodeStartIndex = currentIndex;
+        const { content: episodeContent, highlightRanges } =
+          this.formatEpisodeWithRanges(episode, currentIndex);
         const episodeLength = episodeContent.length;
 
         requests.push({
@@ -105,8 +107,8 @@ export class DocsWriter {
           },
         });
 
-        // Make labels bold (Summary, Key Topics, Highlights, Link)
-        const labels = ['Summary:', 'Key Topics:', 'Highlights:', 'Link:'];
+        // Make labels bold (Summary, Key Topics, Highlights)
+        const labels = ['Summary:', 'Key Topics:', 'Highlights:'];
 
         let searchIndex = currentIndex;
         for (const label of labels) {
@@ -135,7 +137,55 @@ export class DocsWriter {
           }
         }
 
+        // Convert highlights to bullet list
+        for (const range of highlightRanges) {
+          requests.push({
+            createParagraphBullets: {
+              range: {
+                startIndex: range.start,
+                endIndex: range.end,
+              },
+              bulletPreset: 'BULLET_DISC_CIRCLE_SQUARE',
+            },
+          });
+        }
+
+        // Find and make the video link clickable
+        const linkText = 'Watch on YouTube';
+        const linkStart = episodeContent.indexOf(linkText);
+        if (linkStart !== -1) {
+          const absoluteLinkStart = currentIndex + linkStart;
+          const absoluteLinkEnd = absoluteLinkStart + linkText.length;
+
+          requests.push({
+            updateTextStyle: {
+              range: {
+                startIndex: absoluteLinkStart,
+                endIndex: absoluteLinkEnd,
+              },
+              textStyle: {
+                link: {
+                  url: episode.videoUrl,
+                },
+              },
+              fields: 'link',
+            },
+          });
+        }
+
         currentIndex += episodeLength;
+
+        // Add spacing between episodes (but not after the last episode)
+        const isLastEpisode = episodes[episodes.length - 1] === episode;
+        if (!isLastEpisode) {
+          requests.push({
+            insertText: {
+              location: { index: currentIndex },
+              text: '\n',
+            },
+          });
+          currentIndex += 1;
+        }
       }
 
       // Add horizontal rule after channel (if not last channel)
@@ -170,9 +220,33 @@ export class DocsWriter {
   }
 
   /**
-   * Format an episode as text
+   * Format ISO 8601 duration to human-readable format
    */
-  private formatEpisode(episode: EpisodeData): string {
+  private formatDuration(isoDuration: string): string {
+    const match = isoDuration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+
+    if (!match) return isoDuration; // Fallback to original if parse fails
+
+    const hours = match[1] ? parseInt(match[1]) : 0;
+    const minutes = match[2] ? parseInt(match[2]) : 0;
+
+    const parts: string[] = [];
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+
+    return parts.join(' ') || '0m';
+  }
+
+  /**
+   * Format an episode with tracked ranges for highlights
+   */
+  private formatEpisodeWithRanges(
+    episode: EpisodeData,
+    startIndex: number
+  ): {
+    content: string;
+    highlightRanges: Array<{ start: number; end: number }>;
+  } {
     const publishDate = new Date(episode.publishedAt).toLocaleDateString(
       'en-US',
       {
@@ -182,15 +256,67 @@ export class DocsWriter {
       }
     );
 
-    const parts = [
-      `${episode.title} (${publishDate}) - ${episode.duration}\n`,
-      `Summary: ${episode.summary}\n`,
-      `Key Topics: ${episode.keyTopics.join(', ')}\n`,
-      `Highlights:\n${episode.highlights.map((h) => `- ${h}`).join('\n')}\n`,
-      `Link: ${episode.videoUrl}\n\n`,
-    ];
+    // Format the duration to be human-readable
+    const formattedDuration = this.formatDuration(episode.duration);
 
-    return parts.join('');
+    // Build content with better spacing
+    const parts: string[] = [];
+    let currentPos = startIndex;
+
+    // Title line (will be Heading 2)
+    const titleLine = `${episode.title}\n`;
+    parts.push(titleLine);
+    currentPos += titleLine.length;
+
+    // Metadata line with extra spacing
+    const metadataLine = `${publishDate} • ${formattedDuration}\n\n`;
+    parts.push(metadataLine);
+    currentPos += metadataLine.length;
+
+    // Summary section
+    const summaryLine = `Summary: ${episode.summary}\n\n`;
+    parts.push(summaryLine);
+    currentPos += summaryLine.length;
+
+    // Key Topics section
+    const topicsLine = `Key Topics: ${episode.keyTopics.join(', ')}\n\n`;
+    parts.push(topicsLine);
+    currentPos += topicsLine.length;
+
+    // Highlights section
+    const highlightsHeader = `Highlights:\n`;
+    parts.push(highlightsHeader);
+    currentPos += highlightsHeader.length;
+
+    // Track each highlight range for bullet formatting
+    const highlightRanges: Array<{ start: number; end: number }> = [];
+    for (const highlight of episode.highlights) {
+      const highlightLine = `${highlight}\n`;
+      const highlightStart = currentPos;
+      const highlightEnd = currentPos + highlightLine.length;
+
+      highlightRanges.push({
+        start: highlightStart,
+        end: highlightEnd,
+      });
+
+      parts.push(highlightLine);
+      currentPos += highlightLine.length;
+    }
+
+    // Add extra spacing after highlights
+    parts.push('\n');
+    currentPos += 1;
+
+    // Video link (will be converted to hyperlink)
+    const linkLine = `Watch on YouTube\n\n`;
+    parts.push(linkLine);
+    currentPos += linkLine.length;
+
+    return {
+      content: parts.join(''),
+      highlightRanges,
+    };
   }
 
   /**
