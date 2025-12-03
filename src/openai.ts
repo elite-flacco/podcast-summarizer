@@ -19,7 +19,6 @@ export interface PodcastSummary {
   summary: string;
   keyTopics: string[];
   highlights: string[];
-  duration: string;
 }
 
 /**
@@ -44,7 +43,9 @@ export async function summarizePodcast(
               type: 'input_text',
               text: [
                 'You are an expert at analyzing and summarizing podcast content.',
-                'Return crisp, engaging summaries that stay true to the transcript.',
+                'Return crisp, engaging, and accurate summaries grounded strictly in the transcript.',
+                'Identify not just what was discussed, but the most meaningful insights, arguments, or takeaways expressed by the speakers.',
+                "For interview-style episodes, prioritize the guest's unique perspectives, claims, and actionable insights rather than generic topic descriptions.",
               ].join(' '),
             },
           ],
@@ -56,13 +57,22 @@ export async function summarizePodcast(
               type: 'input_text',
               text: [
                 `Podcast title: "${title}" from channel "${channelName}".`,
+                '',
                 'Full transcript:',
                 transcript,
                 '',
-                'Provide:',
-                '1) A concise 2-3 sentence summary of the main topic.',
-                '2) 3-5 key topics discussed.',
-                '3) 3-5 notable highlights or insights.',
+                'Provide the following:',
+                '',
+                '1) **Main Summary (2–3 sentences):**',
+                '   A concise explanation of the core theme and what listeners will take away.',
+                '',
+                '2) **Key Topics (3–5 bullets):**',
+                '   Clearly list the major subjects covered.',
+                '',
+                '3) **Notable Insights (5-10 bullets):**',
+                '   Focus on the most interesting, surprising, or valuable insights.',
+                '   • If it is an interview episode, emphasize the guest’s viewpoints, frameworks, lessons learned, or expertise.',
+                '   • Avoid generic descriptions like “they talked about…”; highlight what the guest actually contributed intellectually.',
               ].join('\n'),
             },
           ],
@@ -91,17 +101,12 @@ export async function summarizePodcast(
               highlights: {
                 type: 'array',
                 description: 'Notable highlights, insights, or takeaways',
-                minItems: 3,
-                maxItems: 5,
+                minItems: 5,
+                maxItems: 10,
                 items: { type: 'string' },
               },
-              duration: {
-                type: 'string',
-                description:
-                  'Optional human-friendly duration (e.g., "42m" or "1h 05m")',
-              },
             },
-            required: ['summary', 'keyTopics', 'highlights', 'duration'],
+            required: ['summary', 'keyTopics', 'highlights'],
           },
         },
       },
@@ -121,7 +126,6 @@ export async function summarizePodcast(
       summary: parsed.summary || '',
       keyTopics: parsed.keyTopics || [],
       highlights: parsed.highlights || [],
-      duration: parsed.duration || '',
     };
   } catch (error) {
     console.error('Error generating summary:', error);
