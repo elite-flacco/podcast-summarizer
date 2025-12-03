@@ -5,17 +5,20 @@ Automated process that pulls your YouTube podcasts, transcribes them, and drops 
 ## Overview
 
 This worker automatically:
+
 - Fetches new videos from your configured YouTube channels
-- Retrieves video transcripts
-- Generates AI summaries using GPT-5
-- Syncs everything to a Google Docs document
+- Retrieves video transcripts (with Whisper ASR fallback for videos without captions)
+- Generates rich AI summaries using GPT-5
+- Syncs everything to a beautifully formatted Google Docs document
 
 ## Features
 
 - **Automated Daily Sync**: Runs via GitHub Actions at 6 AM UTC daily
 - **Single-User Model**: Fork and configure with your own credentials
 - **Smart Caching**: Stores data in Supabase to avoid regenerating summaries
-- **Formatted Output**: Creates a well-structured Google Doc with channel sections
+- **Whisper ASR Fallback**: Automatically transcribes videos without captions using OpenAI's Whisper
+- **AI-generated Summaries**: Rich insights with 5-10 key highlights focusing on guest perspectives and actionable takeaways
+- **Beautiful Formatting**: Google Doc with bullet lists, clickable hyperlinks, and proper spacing
 - **Privacy-Friendly**: Your personal channel list stays private (gitignored)
 
 ## Prerequisites
@@ -23,7 +26,7 @@ This worker automatically:
 - Node.js 20+
 - Supabase account (free tier is sufficient)
 - YouTube Data API v3 key (free)
-- OpenAI API key (GPT-5 access required)
+- OpenAI API key (GPT-5 access recommended; Whisper API used for transcription fallback)
 - Google Cloud service account with Docs API access (free)
 
 ## Setup
@@ -55,6 +58,7 @@ Pick one of these approaches:
   Then edit `config/channels.json` with your channels. The file is gitignored so it stays private. You can remove the entry from `.gitignore` if you intend to commit it—in that case you don’t need to set `CHANNELS_JSON`/`CHANNELS_JSON_BASE64` in GitHub secrets.
 
 To find a channel ID:
+
 1. Go to the channel's YouTube page
 2. View page source (Ctrl+U)
 3. Search for `"channelId"`
@@ -186,8 +190,8 @@ To find a channel ID:
    CREATE POLICY "Public read access" ON transcripts FOR SELECT USING (true);
    CREATE POLICY "Public read access" ON summaries FOR SELECT USING (true);
    ```
-   </details>
 
+   </details>
    - Paste the schema into the query editor
    - Click "Run" (or press Ctrl+Enter)
    - Verify all tables were created: Check "Table Editor" in left sidebar
@@ -231,9 +235,11 @@ To find a channel ID:
 7. Save it securely
 
 **Important Notes**:
+
 - **Default model**: Uses GPT-5 (`gpt-5-mini`). Override with `OPENAI_MODEL` (e.g., `gpt-4o`) if you don't have GPT-5 access.
 - **Max tokens**: Override with `OPENAI_MAX_OUTPUT_TOKENS` (defaults to `100000`).
-- **Cost Estimate**: ~$25-50/month for 50 episodes (depends on transcript length)
+- **Whisper API**: Used automatically for videos without captions. This adds ~$0.006/minute of audio.
+- **Cost Estimate**: ~$25-50/month for 50 episodes with captions, or ~$40-70/month if using Whisper frequently
 - **Add Credits**: Go to Settings and Billing to add credits/payment method
 
 ### 6. Set Up Google Cloud Service Account
@@ -306,6 +312,7 @@ npm run dev
 ```
 
 This will:
+
 - Fetch videos from your configured channels
 - Generate summaries for new videos
 - Update your Google Doc
@@ -313,6 +320,7 @@ This will:
 ### 10. Deploy to GitHub Actions
 
 1. **Initialize Git** (if not already):
+
    ```bash
    git init
    git add .
@@ -320,6 +328,7 @@ This will:
    ```
 
 2. **Push to GitHub**:
+
    ```bash
    git remote add origin https://github.com/your-username/pod-worker
    git push -u origin main
@@ -348,16 +357,19 @@ This will:
 ### 11. Keeping Your Channels Private
 
 **What's Public**:
+
 - All code
 - `channels.example.json` with example channels
 - README and documentation
 
 **What Stays Private**:
+
 - Your channel list via `CHANNELS_JSON`/`CHANNELS_JSON_BASE64` secrets (or a local `channels.json`, which is gitignored unless you choose to remove it)
 - Your `.env` file (gitignored)
 - GitHub Secrets (encrypted)
 
 **To verify before pushing**:
+
 ```bash
 git status  # Should NOT show channels.json
 git diff --staged  # Review what will be committed
@@ -365,26 +377,47 @@ git diff --staged  # Review what will be committed
 
 ## Document Structure
 
-The Google Doc is organized as:
+The Google Doc is organized with rich formatting:
 
 ```
 # Lex Fridman Podcast
 
-## #412 - Elon Musk (Nov 28, 2025) - 2h 15m
-Summary: Discussion about AI, Twitter, and the future...
-Key Topics: AI, Social Media, Space Exploration
+## #412 - Elon Musk
+Nov 28, 2025 • 2h 15m
+
+Summary: Discussion about AI, Twitter, and the future of technology...
+
+Key Topics:
+• Artificial Intelligence Safety
+• Social Media Dynamics
+• Space Exploration
+
 Highlights:
-- AI will transform society fundamentally
-- Twitter's role in public discourse
-Link: https://youtube.com/watch?v=abc123
+• AI will fundamentally transform society within the next decade
+• The role of Twitter in shaping public discourse
+• Challenges and opportunities in Mars colonization
+• The intersection of neuroscience and AI
+• Ethical considerations in autonomous systems
+
+Watch on YouTube [hyperlinked]
 
 ---
 
 # Huberman Lab
 
-## Sleep Toolkit (Nov 27, 2025) - 1h 30m
+## Sleep Toolkit
+Nov 27, 2025 • 1h 30m
 ...
 ```
+
+**Formatting Features:**
+
+- Channel names as Heading 1
+- Episode titles as Heading 2
+- Metadata (date, duration) on separate line
+- Key Topics and Highlights as bullet lists
+- Video links as clickable hyperlinks
+- Proper spacing between sections
 
 ## Configuration
 
@@ -396,54 +429,62 @@ Link: https://youtube.com/watch?v=abc123
 
 ### Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `SUPABASE_URL` | Your Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (bypasses RLS) |
-| `YOUTUBE_API_KEY` | YouTube Data API v3 key |
-| `OPENAI_API_KEY` | OpenAI API key with GPT-5 access |
-| `CHANNELS_JSON` | Inline JSON for your channels (preferred for CI) |
-| `CHANNELS_JSON_BASE64` | Base64-encoded channels JSON (alternative to `CHANNELS_JSON`) |
-| `OPENAI_MODEL` | Model to use for summaries (default: `gpt-5-mini`) |
-| `OPENAI_MAX_OUTPUT_TOKENS` | Max tokens per response (default: `100000`) |
-| `GOOGLE_DOCS_DOCUMENT_ID` | ID of your Google Doc |
-| `GOOGLE_DOCS_CLIENT_EMAIL` | Service account email |
-| `GOOGLE_DOCS_PRIVATE_KEY` | Service account private key |
-| `DAYS_TO_LOOK_BACK` | Only process videos from last N days (default: 30) |
-| `MAX_RESULTS_PER_CHANNEL` | Max videos to fetch per channel (default: 10) |
+| Variable                    | Description                                                   |
+| --------------------------- | ------------------------------------------------------------- |
+| `SUPABASE_URL`              | Your Supabase project URL                                     |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (bypasses RLS)                               |
+| `YOUTUBE_API_KEY`           | YouTube Data API v3 key                                       |
+| `OPENAI_API_KEY`            | OpenAI API key with GPT-5 access                              |
+| `CHANNELS_JSON`             | Inline JSON for your channels (preferred for CI)              |
+| `CHANNELS_JSON_BASE64`      | Base64-encoded channels JSON (alternative to `CHANNELS_JSON`) |
+| `OPENAI_MODEL`              | Model to use for summaries (default: `gpt-5-mini`)            |
+| `OPENAI_MAX_OUTPUT_TOKENS`  | Max tokens per response (default: `100000`)                   |
+| `GOOGLE_DOCS_DOCUMENT_ID`   | ID of your Google Doc                                         |
+| `GOOGLE_DOCS_CLIENT_EMAIL`  | Service account email                                         |
+| `GOOGLE_DOCS_PRIVATE_KEY`   | Service account private key                                   |
+| `DAYS_TO_LOOK_BACK`         | Only process videos from last N days (default: 30)            |
+| `MAX_RESULTS_PER_CHANNEL`   | Max videos to fetch per channel (default: 10)                 |
 
 ## Cost Estimate
 
 **Monthly (10 channels, ~50 new videos/month):**
+
 - GitHub Actions: **Free** (2,000 minutes/month free tier)
 - YouTube API: **Free** (well under quota)
 - Supabase: **Free** (using existing database)
 - OpenAI GPT-5: **~$25-50/month** (depending on transcript length)
+- OpenAI Whisper: **~$0-20/month** (only for videos without captions, $0.006/minute)
 - Google Docs API: **Free** (unlimited)
 
-**Total: ~$25-50/month** (OpenAI only)
+**Total: ~$25-70/month** (OpenAI only, varies based on caption availability)
 
 ## Troubleshooting
 
 ### "Missing required environment variable"
+
 - Ensure all required environment variables are set in `.env`
 - For GitHub Actions, check repository secrets
 
 ### "Failed to load channels configuration"
+
 - Provide `CHANNELS_JSON` (or `CHANNELS_JSON_BASE64`) in `.env`/Secrets, or add a local `config/channels.json`
 - Confirm the JSON is valid and includes a `channels` array
 
 ### "Failed to fetch transcript"
-- Video may not have public captions
+
+- Video may not have public captions, but Whisper ASR will attempt to transcribe automatically
+- If both caption scraping and Whisper fail, video will be marked as transcript unavailable
 - Video might be age-restricted or private
-- Worker will skip videos without transcripts
+- Worker will skip videos where transcription is impossible
 
 ### "Failed to sync to Google Docs"
+
 - Verify service account has Editor access to the document
 - Check that Google Docs API is enabled
 - Ensure `GOOGLE_DOCS_PRIVATE_KEY` includes `\n` characters
 
 ### GitHub Actions not running
+
 - Check workflow file syntax
 - Ensure Actions are enabled in repository settings
 - Verify cron schedule is correct (UTC timezone)
@@ -498,7 +539,9 @@ MIT
 ## Credits
 
 Built using:
-- [googleapis](https://github.com/googleapis/google-api-nodejs-client)
-- [@danielxceron/youtube-transcript](https://github.com/danielxceron/youtube-transcript)
-- [OpenAI API](https://platform.openai.com/)
-- [Supabase](https://supabase.com/)
+
+- [googleapis](https://github.com/googleapis/google-api-nodejs-client) - YouTube API and Google Docs API
+- [@danielxceron/youtube-transcript](https://github.com/danielxceron/youtube-transcript) - Caption scraping
+- [ytdl-core](https://github.com/fent/node-ytdl-core) - Audio extraction for Whisper
+- [OpenAI API](https://platform.openai.com/) - GPT-5 summaries and Whisper transcription
+- [Supabase](https://supabase.com/) - Database storage
