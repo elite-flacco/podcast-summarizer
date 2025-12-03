@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import type { OpenAIConfig } from './config';
+import { createReadStream } from 'fs';
 
 let cachedClient: { apiKey: string; client: OpenAI } | null = null;
 
@@ -130,6 +131,29 @@ export async function summarizePodcast(
   } catch (error) {
     console.error('Error generating summary:', error);
     throw new Error('Failed to generate podcast summary');
+  }
+}
+
+/**
+ * Transcribe audio file using Whisper
+ */
+export async function transcribeAudioFromFile(
+  filePath: string,
+  openaiConfig: OpenAIConfig
+): Promise<string> {
+  try {
+    const openai = getOpenAIClient(openaiConfig.apiKey);
+
+    const response = await openai.audio.transcriptions.create({
+      model: 'whisper-1',
+      file: createReadStream(filePath),
+      response_format: 'text',
+    });
+
+    return response;
+  } catch (error) {
+    console.error('Error transcribing audio:', error);
+    throw new Error('Failed to transcribe audio with Whisper');
   }
 }
 

@@ -1,5 +1,15 @@
 import { google } from 'googleapis';
-import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
+import {
+  YoutubeTranscript,
+  YoutubeTranscriptDisabledError,
+  YoutubeTranscriptNotAvailableError,
+  YoutubeTranscriptNotAvailableLanguageError,
+  YoutubeTranscriptVideoUnavailableError,
+} from '@danielxceron/youtube-transcript';
+import ytdl from 'ytdl-core';
+import { createWriteStream, unlink } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 
 export interface YouTubeChannel {
   id: string;
@@ -24,6 +34,23 @@ export interface YouTubeTranscriptSegment {
   text: string;
   start: number;
   duration: number;
+}
+
+export type TranscriptUnavailableReason =
+  | 'disabled'
+  | 'not_available'
+  | 'language_unavailable'
+  | 'video_unavailable'
+  | 'unknown';
+
+export class TranscriptUnavailableError extends Error {
+  constructor(
+    message: string,
+    public readonly reason: TranscriptUnavailableReason = 'unknown'
+  ) {
+    super(message);
+    this.name = 'TranscriptUnavailableError';
+  }
 }
 
 /**
@@ -153,11 +180,41 @@ export async function getVideoTranscript(videoId: string): Promise<string> {
     const transcriptText = transcriptData.map((item) => item.text).join(' ');
 
     return transcriptText;
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof YoutubeTranscriptDisabledError) {
+      throw new TranscriptUnavailableError(
+        'Captions are disabled for this video',
+        'disabled'
+      );
+    }
+
+    if (error instanceof YoutubeTranscriptNotAvailableLanguageError) {
+      throw new TranscriptUnavailableError(
+        'Requested language is not available for this video',
+        'language_unavailable'
+      );
+    }
+
+    if (error instanceof YoutubeTranscriptNotAvailableError) {
+      throw new TranscriptUnavailableError(
+        'No captions are available for this video',
+        'not_available'
+      );
+    }
+
+    if (error instanceof YoutubeTranscriptVideoUnavailableError) {
+      throw new TranscriptUnavailableError(
+        'Video is unavailable or private',
+        'video_unavailable'
+      );
+    }
+
     console.error('Error fetching transcript:', error);
-    throw new Error(
-      'Failed to fetch transcript for video. The video may not have captions available.'
-    );
+    if (error instanceof Error) {
+      throw error;
+    }
+
+    throw new Error('Failed to fetch transcript for video');
   }
 }
 
@@ -174,4 +231,32 @@ export function parseDuration(duration: string): number {
   const seconds = parseInt(match[3]) || 0;
 
   return hours * 60 + minutes + seconds / 60;
+}
+
+/**
+ * Download YouTube video audio to a temporary file
+ */
+export async function downloadAudio(videoId: string): Promise<string> {
+  const url = `https://www.youtube.com/watch?v=${videoId}`;
+  const outputPath = join(tmpdir(), `yt-audio-${videoId}-${Date.now()}.m4a`);
+
+  return new Promise((resolve, reject) => {
+    const audioStream = ytdl(url, {
+      filter: 'audioonly',
+      quality: 'highestaudio',
+    }).on('error', (err) => {
+      reject(err);
+    });
+
+    const writeStream = createWriteStream(outputPath);
+    audioStream.pipe(writeStream);
+
+    writeStream.on('finish', () => resolve(outputPath));
+    writeStream.on('error', (err) => {
+      unlink(outputPath, () => {
+        // best-effort cleanup
+      });
+      reject(err);
+    });
+  });
 }

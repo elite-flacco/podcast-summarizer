@@ -80,7 +80,6 @@ export class DocsWriter {
 
       // Add episodes for this channel
       for (const episode of episodes) {
-        const episodeStartIndex = currentIndex;
         const { content: episodeContent, highlightRanges } =
           this.formatEpisodeWithRanges(episode, currentIndex);
         const episodeLength = episodeContent.length;

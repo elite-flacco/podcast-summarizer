@@ -7,8 +7,10 @@ import {
   getChannelVideos,
   getVideoTranscript,
   parseDuration,
+  downloadAudio,
 } from './youtube';
-import { summarizePodcast } from './openai';
+import { summarizePodcast, transcribeAudioFromFile } from './openai';
+import { unlink } from 'fs/promises';
 
 export interface ProcessingResult {
   channelsProcessed: number;
@@ -23,6 +25,7 @@ export interface ProcessingResult {
 export class PodcastProcessor {
   private readonly SUMMARY_TIMEOUT_MS = 180000;
   private readonly TRANSCRIPT_TIMEOUT_MS = 60000;
+  private readonly ASR_TIMEOUT_MS = 240000;
 
   constructor(
     private config: WorkerConfig,
@@ -135,12 +138,19 @@ export class PodcastProcessor {
     // Process each new video
     for (const video of newVideos) {
       try {
-        await this.processVideo(video, channel);
+        const summaryGenerated = await this.processVideo(video, channel);
         videosProcessed++;
-        summariesGenerated++;
-        this.logger.success(`✓ Processed: ${video.title}`);
+
+        if (summaryGenerated) {
+          summariesGenerated++;
+          this.logger.success(`Processed: ${video.title}`);
+        } else {
+          this.logger.info(
+            `Processed metadata for ${video.title} (no captions available)`
+          );
+        }
       } catch (error: any) {
-        this.logger.error(`✗ Failed to process ${video.title}:`, error.message);
+        this.logger.error(`Failed to process ${video.title}:`, error.message);
         // Continue with next video instead of throwing
       }
     }
@@ -196,7 +206,7 @@ export class PodcastProcessor {
   private async processVideo(
     video: any,
     channel: ChannelConfig
-  ): Promise<void> {
+  ): Promise<boolean> {
     this.logger.info(`Upserting metadata for ${video.title}...`);
 
     // 1. Upsert video to database
@@ -245,6 +255,8 @@ export class PodcastProcessor {
         );
       }
     } else {
+      let transcriptSource: 'captions' | 'asr' = 'captions';
+
       // Fetch new transcript from YouTube
       try {
         this.logger.info(`Fetching transcript for ${video.title}...`);
@@ -253,40 +265,67 @@ export class PodcastProcessor {
           this.TRANSCRIPT_TIMEOUT_MS,
           `transcript fetch for ${video.title}`
         );
-
-        // Store transcript
-        const { error: transcriptError } = await this.supabase
-          .from('transcripts')
-          .upsert(
-            {
-              video_id: video.id,
-              content: transcript,
-              language: 'en',
-            },
-            { onConflict: 'video_id' }
-          );
-
-        if (transcriptError) {
-          throw new Error(
-            `Failed to store transcript: ${transcriptError.message}`
-          );
-        }
-
-        // Update video to mark transcript as fetched
-        await this.supabase
-          .from('videos')
-          .update({
-            has_transcript: true,
-            transcript_fetched_at: new Date().toISOString(),
-          })
-          .eq('id', video.id);
+        transcriptSource = 'captions';
       } catch (error: any) {
-        // Skip videos without transcripts
         this.logger.warn(
-          `Skipping summary for ${video.title} due to transcript error: ${error.message}`
+          `Captions unavailable for ${video.title}: ${error.message}. Falling back to Whisper ASR...`
         );
-        throw new Error(`No transcript available: ${error.message}`);
+
+        let audioPath: string | undefined;
+
+        try {
+          audioPath = await downloadAudio(video.id);
+          transcript = await this.withTimeout(
+            transcribeAudioFromFile(audioPath, this.config.openai),
+            this.ASR_TIMEOUT_MS,
+            `ASR transcript for ${video.title}`
+          );
+          this.logger.info(`Using Whisper ASR transcript for ${video.title}`);
+          transcriptSource = 'asr';
+        } catch (asrError: any) {
+          await this.markTranscriptUnavailable(
+            video.id,
+            asrError?.message || 'Transcript unavailable'
+          );
+          this.logger.warn(
+            `Skipping summary for ${video.title} due to transcript error: ${asrError?.message}`
+          );
+          return false;
+        } finally {
+          if (audioPath) {
+            await unlink(audioPath).catch(() => {
+              // best-effort cleanup
+            });
+          }
+        }
       }
+
+      // Store transcript
+      const { error: transcriptError } = await this.supabase
+        .from('transcripts')
+        .upsert(
+          {
+            video_id: video.id,
+            content: transcript,
+            language: transcriptSource === 'asr' ? 'auto' : 'en',
+          },
+          { onConflict: 'video_id' }
+        );
+
+      if (transcriptError) {
+        throw new Error(
+          `Failed to store transcript: ${transcriptError.message}`
+        );
+      }
+
+      // Update video to mark transcript as fetched
+      await this.supabase
+        .from('videos')
+        .update({
+          has_transcript: true,
+          transcript_fetched_at: new Date().toISOString(),
+        })
+        .eq('id', video.id);
     }
 
     // 3. Generate AI summary
@@ -320,6 +359,8 @@ export class PodcastProcessor {
     if (summaryError) {
       throw new Error(`Failed to store summary: ${summaryError.message}`);
     }
+
+    return true;
   }
 
   /**
@@ -330,7 +371,7 @@ export class PodcastProcessor {
 
     const { data, error } = await this.supabase
       .from('videos')
-      .select('id, has_transcript, summaries(video_id)')
+      .select('id, has_transcript, transcript_fetched_at, summaries(video_id)')
       .in('id', videoIds);
 
     if (error) {
@@ -339,9 +380,16 @@ export class PodcastProcessor {
     }
 
     // Only return videos that have both transcript and summary
-    return (data || [])
+    const processed = (data || [])
       .filter((v: any) => v.has_transcript && v.summaries)
       .map((v) => v.id);
+
+    // Also skip videos where transcript fetch already attempted and marked unavailable
+    const transcriptUnavailable = (data || [])
+      .filter((v: any) => !v.has_transcript && v.transcript_fetched_at)
+      .map((v) => v.id);
+
+    return Array.from(new Set([...processed, ...transcriptUnavailable]));
   }
 
   /**
@@ -442,6 +490,44 @@ export class PodcastProcessor {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
+    }
+  }
+
+  private async markTranscriptUnavailable(
+    videoId: string,
+    reason: string
+  ): Promise<void> {
+    const timestamp = new Date().toISOString();
+
+    const { error: updateError } = await this.supabase
+      .from('videos')
+      .update({
+        has_transcript: false,
+        transcript_fetched_at: timestamp,
+      })
+      .eq('id', videoId);
+
+    if (updateError) {
+      this.logger.warn(
+        `Failed to flag transcript unavailable for video ${videoId}: ${updateError.message}`
+      );
+    }
+
+    const { error: transcriptError } = await this.supabase
+      .from('transcripts')
+      .upsert(
+        {
+          video_id: videoId,
+          content: `Transcript unavailable: ${reason}`,
+          language: 'unavailable',
+        },
+        { onConflict: 'video_id' }
+      );
+
+    if (transcriptError) {
+      this.logger.warn(
+        `Failed to record transcript unavailability for video ${videoId}: ${transcriptError.message}`
+      );
     }
   }
 }
