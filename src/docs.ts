@@ -80,8 +80,11 @@ export class DocsWriter {
 
       // Add episodes for this channel
       for (const episode of episodes) {
-        const { content: episodeContent, highlightRanges } =
-          this.formatEpisodeWithRanges(episode, currentIndex);
+        const {
+          content: episodeContent,
+          highlightRanges,
+          topicRanges,
+        } = this.formatEpisodeWithRanges(episode, currentIndex);
         const episodeLength = episodeContent.length;
 
         requests.push({
@@ -134,6 +137,19 @@ export class DocsWriter {
 
             searchIndex = absoluteLabelEnd;
           }
+        }
+
+        // Convert key topics to bullet list
+        for (const range of topicRanges) {
+          requests.push({
+            createParagraphBullets: {
+              range: {
+                startIndex: range.start,
+                endIndex: range.end,
+              },
+              bulletPreset: 'BULLET_DISC_CIRCLE_SQUARE',
+            },
+          });
         }
 
         // Convert highlights to bullet list
@@ -237,7 +253,7 @@ export class DocsWriter {
   }
 
   /**
-   * Format an episode with tracked ranges for highlights
+   * Format an episode with tracked ranges for highlights and topics
    */
   private formatEpisodeWithRanges(
     episode: EpisodeData,
@@ -245,6 +261,7 @@ export class DocsWriter {
   ): {
     content: string;
     highlightRanges: Array<{ start: number; end: number }>;
+    topicRanges: Array<{ start: number; end: number }>;
   } {
     const publishDate = new Date(episode.publishedAt).toLocaleDateString(
       'en-US',
@@ -278,9 +295,29 @@ export class DocsWriter {
     currentPos += summaryLine.length;
 
     // Key Topics section
-    const topicsLine = `Key Topics: ${episode.keyTopics.join(', ')}\n\n`;
-    parts.push(topicsLine);
-    currentPos += topicsLine.length;
+    const topicsHeader = `Key Topics:\n`;
+    parts.push(topicsHeader);
+    currentPos += topicsHeader.length;
+
+    // Track each topic range for bullet formatting
+    const topicRanges: Array<{ start: number; end: number }> = [];
+    for (const topic of episode.keyTopics) {
+      const topicLine = `${topic}\n`;
+      const topicStart = currentPos;
+      const topicEnd = currentPos + topicLine.length;
+
+      topicRanges.push({
+        start: topicStart,
+        end: topicEnd,
+      });
+
+      parts.push(topicLine);
+      currentPos += topicLine.length;
+    }
+
+    // Add extra spacing after topics
+    parts.push('\n');
+    currentPos += 1;
 
     // Highlights section
     const highlightsHeader = `Highlights:\n`;
@@ -315,6 +352,7 @@ export class DocsWriter {
     return {
       content: parts.join(''),
       highlightRanges,
+      topicRanges,
     };
   }
 
