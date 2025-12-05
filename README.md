@@ -13,13 +13,14 @@ This worker automatically:
 
 ## Features
 
-- **Automated Daily Sync**: Runs via GitHub Actions at 6 AM UTC daily
+- **Automated Daily Sync**: Runs via GitHub Actions, self-hosted runner, or local cron
 - **Single-User Model**: Fork and configure with your own credentials
 - **Smart Caching**: Stores data in Supabase to avoid regenerating summaries
 - **Whisper ASR Fallback**: Automatically transcribes videos without captions using OpenAI's Whisper
 - **AI-generated Summaries**: Rich insights with 5-10 key highlights focusing on guest perspectives and actionable takeaways
 - **Beautiful Formatting**: Google Doc with bullet lists, clickable hyperlinks, and proper spacing
 - **Privacy-Friendly**: Your personal channel list stays private (gitignored)
+- **Flexible Deployment**: Run on GitHub Actions, self-hosted runner, or local machine via cron
 
 ## Prerequisites
 
@@ -317,26 +318,27 @@ This will:
 - Generate summaries for new videos
 - Update your Google Doc
 
-### 10. Deploy to GitHub Actions
+### 10. Deployment Options
 
-1. **Initialize Git** (if not already):
+**Important**: YouTube typically blocks transcript fetching from GitHub Actions hosted runners due to IP-based bot detection. Choose one of these deployment methods:
+
+#### Option A: Self-Hosted GitHub Actions Runner (Recommended)
+
+Best for: Automated scheduling with GitHub Actions while avoiding IP blocks
+
+1. **Push to GitHub**:
 
    ```bash
    git init
    git add .
    git commit -m "Initial commit"
-   ```
-
-2. **Push to GitHub**:
-
-   ```bash
    git remote add origin https://github.com/your-username/pod-worker
    git push -u origin main
    ```
 
    **Important**: Your `channels.json` will NOT be pushed (it's gitignored). Only `channels.example.json` is public.
 
-3. **Add GitHub Secrets**:
+2. **Add GitHub Secrets**:
    - Go to Settings > Secrets and variables > Actions
    - Add repository secrets:
      - `CHANNELS_JSON` (or `CHANNELS_JSON_BASE64`)
@@ -350,9 +352,93 @@ This will:
      - `GOOGLE_DOCS_CLIENT_EMAIL`
      - `GOOGLE_DOCS_PRIVATE_KEY`
 
-4. **Enable GitHub Actions** in repository settings
+3. **Set up self-hosted runner**:
+   - Go to your repo Settings → Actions → Runners → New self-hosted runner
+   - Follow GitHub's setup instructions for your OS
+   - The runner will use your local IP instead of GitHub's
 
-5. **Trigger manually** via Actions tab or wait for daily cron
+4. **Update workflow**:
+   Edit `.github/workflows/sync.yml`:
+   ```yaml
+   jobs:
+     sync:
+       runs-on: self-hosted  # Changed from ubuntu-latest
+       timeout-minutes: 30
+   ```
+
+5. **Keep runner online**:
+   - On Linux/Mac: Run as a service (see GitHub's instructions)
+   - On Windows: Use Task Scheduler or run as a Windows service
+   - Runner only needs to be online when workflow runs (e.g., 6 AM UTC daily)
+
+6. **Enable GitHub Actions** in repository settings
+
+7. **Trigger manually** via Actions tab or wait for daily cron
+
+**Pros**: Automated via GitHub Actions, reliable, avoids IP blocks
+**Cons**: Requires a machine/server running
+
+#### Option B: Local Cron Job
+
+Best for: Simplicity, no GitHub dependency
+
+**Linux/Mac**:
+
+1. **Build the project**:
+   ```bash
+   npm run build
+   ```
+
+2. **Edit crontab**:
+   ```bash
+   crontab -e
+   ```
+
+3. **Add cron entry** (runs daily at 6 AM):
+   ```bash
+   0 6 * * * cd /full/path/to/pod-worker && npm start >> /tmp/pod-worker.log 2>&1
+   ```
+
+4. **Verify**:
+   ```bash
+   crontab -l
+   ```
+
+**Windows Task Scheduler**:
+
+1. **Build the project**:
+   ```cmd
+   npm run build
+   ```
+
+2. **Create batch file** (`run-pod-worker.bat`):
+   ```batch
+   @echo off
+   cd C:\Users\YourUsername\Documents\Projects\pod-worker
+   npm start >> pod-worker.log 2>&1
+   ```
+
+3. **Create scheduled task**:
+   - Open Task Scheduler → Create Basic Task
+   - Name: "Pod Worker Sync"
+   - Trigger: Daily at 6:00 AM
+   - Action: Start a program
+   - Program: `C:\Users\YourUsername\Documents\Projects\pod-worker\run-pod-worker.bat`
+
+4. **Configure**:
+   - Run whether user is logged on or not
+   - Run with highest privileges (if needed)
+
+**Pros**: Simple setup, no GitHub Actions needed
+**Cons**: Machine must be on at scheduled time
+
+#### Option C: GitHub Actions Hosted Runner (Not Recommended)
+
+⚠️ **Warning**: This will likely fail due to YouTube blocking GitHub's IPs. Only use for testing or if you have a proxy solution.
+
+1. Follow steps 1-2 from Option A (push to GitHub and add secrets)
+2. Keep `.github/workflows/sync.yml` as-is (`runs-on: ubuntu-latest`)
+3. Enable GitHub Actions and trigger
 
 ### 11. Keeping Your Channels Private
 
@@ -476,6 +562,10 @@ Nov 27, 2025 • 1h 30m
 - If both caption scraping and Whisper fail, video will be marked as transcript unavailable
 - Video might be age-restricted or private
 - Worker will skip videos where transcription is impossible
+
+### Transcript fetching fails in GitHub Actions
+
+YouTube blocks GitHub Actions hosted runner IPs. See [Deployment Options](#10-deployment-options) for self-hosted runner or local cron alternatives.
 
 ### "Failed to sync to Google Docs"
 
