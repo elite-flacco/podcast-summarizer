@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getEpisodeById } from '@/lib/data';
 import { formatDate, formatDuration } from '@/lib/format';
+import { EpisodeActions } from '@/components/EpisodeActions';
 
 interface Props {
   params: { id: string };
@@ -30,6 +31,7 @@ export default async function EpisodePage({ params }: Props) {
             Watch on YouTube
           </Link>
         </div>
+        <EpisodeActions episodeId={episode.id} layout="full" />
       </div>
 
       <div className="summary-block">

@@ -33,6 +33,28 @@ Browse episodes and AI summaries behind a single shared access token. The UI liv
 
 The UI is read-only: it lists recent videos, summaries, key topics, and links out to YouTube.
 
+### UI watched/favorite flags
+
+To persist watched/favorite state in Supabase, add this table (service_role bypasses RLS):
+
+```sql
+create table if not exists episode_flags (
+  video_id text primary key references videos(id) on delete cascade,
+  watched boolean not null default false,
+  favorite boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+-- Harden: only allow service_role (what the UI uses) to read/write
+alter table episode_flags enable row level security;
+create policy "Service role only" on episode_flags
+  for all
+  using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
+```
+
+The UI writes to `episode_flags` via `/api/flags` using the service role key server-side; nothing is stored in the browser.
+
 ## Prerequisites
 
 - Node.js 20+

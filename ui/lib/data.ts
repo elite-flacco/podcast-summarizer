@@ -1,5 +1,5 @@
 import { getSupabaseServerClient } from './supabase';
-import { Episode, Channel } from './types';
+import { Episode, Channel, EpisodeFlag } from './types';
 
 interface VideoRow {
   id: string;
@@ -48,14 +48,18 @@ export async function getEpisodes(limit = 50, channelId?: string): Promise<Episo
   const videoIds = videos.map((video) => video.id);
   const channelIds = Array.from(new Set(videos.map((video) => video.channel_id)));
 
-  const [{ data: summaries, error: summariesError }, { data: channels, error: channelsError }] =
-    await Promise.all([
-      supabase
-        .from('summaries')
-        .select<SummaryRow[]>('video_id, summary, highlights, key_topics')
-        .in('video_id', videoIds),
-      supabase.from('channels').select<ChannelRow[]>('id, title').in('id', channelIds),
-    ]);
+  const [
+    { data: summaries, error: summariesError },
+    { data: channels, error: channelsError },
+    { data: flags, error: flagsError },
+  ] = await Promise.all([
+    supabase
+      .from('summaries')
+      .select<SummaryRow[]>('video_id, summary, highlights, key_topics')
+      .in('video_id', videoIds),
+    supabase.from('channels').select<ChannelRow[]>('id, title').in('id', channelIds),
+    supabase.from('episode_flags').select<EpisodeFlag[]>('video_id, watched, favorite').in('video_id', videoIds),
+  ]);
 
   if (summariesError) {
     throw new Error(`Failed to load summaries: ${summariesError.message}`);
@@ -65,11 +69,18 @@ export async function getEpisodes(limit = 50, channelId?: string): Promise<Episo
     throw new Error(`Failed to load channels: ${channelsError.message}`);
   }
 
+  if (flagsError) {
+    throw new Error(`Failed to load episode flags: ${flagsError.message}`);
+  }
+
   const summaryMap = new Map<string, SummaryRow>();
   (summaries || []).forEach((summary) => summaryMap.set(summary.video_id, summary));
 
   const channelMap = new Map<string, ChannelRow>();
   (channels || []).forEach((channel) => channelMap.set(channel.id, channel));
+
+  const flagMap = new Map<string, EpisodeFlag>();
+  (flags || []).forEach((flag) => flagMap.set(flag.video_id, flag));
 
   return videos.map((video) => {
     const summary = summaryMap.get(video.id);
@@ -87,6 +98,8 @@ export async function getEpisodes(limit = 50, channelId?: string): Promise<Episo
       highlights: summary?.highlights ?? [],
       keyTopics: summary?.key_topics ?? [],
       youtubeUrl: `https://www.youtube.com/watch?v=${video.id}`,
+      watched: flagMap.get(video.id)?.watched ?? false,
+      favorite: flagMap.get(video.id)?.favorite ?? false,
     };
   });
 }

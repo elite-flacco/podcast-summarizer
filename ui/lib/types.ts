@@ -10,9 +10,17 @@ export interface Episode {
   highlights: string[];
   keyTopics: string[];
   youtubeUrl: string;
+  watched?: boolean;
+  favorite?: boolean;
 }
 
 export interface Channel {
   id: string;
   title: string;
+}
+
+export interface EpisodeFlag {
+  video_id: string;
+  watched: boolean;
+  favorite: boolean;
 }
