@@ -1,12 +1,16 @@
 # Dependencies
 node_modules/
+ui/node_modules/
 
 # Build output
 dist/
+ui/.next/
 
 # Environment variables
 .env
 .env.local
+ui/.env
+ui/.env.local
 
 # Personal configuration (keep your channels private)
 config/channels.json

@@ -22,6 +22,17 @@ This worker automatically:
 - **Privacy-Friendly**: Your personal channel list stays private (gitignored)
 - **Flexible Deployment**: Run on GitHub Actions, self-hosted runner, or local machine via cron
 
+## Optional UI (secure viewer)
+
+Browse episodes and AI summaries behind a single shared access token. The UI lives in `ui/` and reads directly from your Supabase tables using the service role key on the server only.
+
+1) `cd ui && cp .env.example .env`
+2) Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a strong `AUTH_TOKEN` (this gates all pages). Optionally set `SITE_NAME`.
+3) Install and run locally: `npm install` (first time) then `npm run dev`
+4) Build for deploy: `npm run build && npm start` or deploy to Vercel/Fly/Netlify with the same env vars. Keep `AUTH_TOKEN` secret.
+
+The UI is read-only: it lists recent videos, summaries, key topics, and links out to YouTube.
+
 ## Prerequisites
 
 - Node.js 20+
