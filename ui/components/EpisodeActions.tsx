@@ -1,41 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircle, Star } from 'lucide-react';
 
 interface Props {
   episodeId: string;
   layout?: 'compact' | 'full';
+  watched?: boolean;
+  favorite?: boolean;
 }
 
-export function EpisodeActions({ episodeId, layout = 'compact' }: Props) {
-  const [watched, setWatched] = useState(false);
-  const [favorite, setFavorite] = useState(false);
-  const [loading, setLoading] = useState(true);
+export function EpisodeActions({
+  episodeId,
+  layout = 'compact',
+  watched: watchedInitial = false,
+  favorite: favoriteInitial = false,
+}: Props) {
+  const router = useRouter();
+  const [watched, setWatched] = useState<boolean>(watchedInitial);
+  const [favorite, setFavorite] = useState<boolean>(favoriteInitial);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-    const fetchFlags = async () => {
-      try {
-        const res = await fetch(`/api/flags?videoId=${episodeId}`);
-        if (!res.ok) throw new Error('Failed to load flags');
-        const data = await res.json();
-        if (!isMounted) return;
-        setWatched(Boolean(data.watched));
-        setFavorite(Boolean(data.favorite));
-      } catch {
-        // ignore and fall back to defaults
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    fetchFlags();
-    return () => {
-      isMounted = false;
-    };
-  }, [episodeId]);
+    setWatched(Boolean(watchedInitial));
+  }, [watchedInitial]);
 
-  const disabled = loading;
+  useEffect(() => {
+    setFavorite(Boolean(favoriteInitial));
+  }, [favoriteInitial]);
 
   const toggleWatched = () => {
     const next = !watched;
@@ -50,6 +43,7 @@ export function EpisodeActions({ episodeId, layout = 'compact' }: Props) {
   };
 
   async function persist(update: { watched?: boolean; favorite?: boolean }) {
+    setSaving(true);
     try {
       const res = await fetch('/api/flags', {
         method: 'POST',
@@ -57,10 +51,13 @@ export function EpisodeActions({ episodeId, layout = 'compact' }: Props) {
         body: JSON.stringify({ videoId: episodeId, ...update }),
       });
       if (!res.ok) throw new Error('Failed to save');
+      router.refresh();
     } catch {
       // rollback on failure
       if (typeof update.watched === 'boolean') setWatched((prev) => !prev);
       if (typeof update.favorite === 'boolean') setFavorite((prev) => !prev);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -75,7 +72,7 @@ export function EpisodeActions({ episodeId, layout = 'compact' }: Props) {
           toggleWatched();
         }}
         aria-pressed={watched}
-        disabled={disabled}
+        disabled={saving}
       >
         <CheckCircle size={16} />
       </button>
@@ -88,7 +85,7 @@ export function EpisodeActions({ episodeId, layout = 'compact' }: Props) {
           toggleFavorite();
         }}
         aria-pressed={favorite}
-        disabled={disabled}
+        disabled={saving}
       >
         <Star size={16} />
       </button>

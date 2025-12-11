@@ -3,18 +3,29 @@ import { FilterBar } from '@/components/FilterBar';
 import { getEpisodes, getChannels } from '@/lib/data';
 import { Episode } from '@/lib/types';
 
+export const revalidate = 0; // always fetch latest flags and episodes
+
 interface Props {
-  searchParams?: { channel?: string };
+  searchParams?: { channel?: string; favorite?: string; watched?: string };
 }
 
 export default async function Page({ searchParams }: Props) {
   const selectedChannel = searchParams?.channel;
+  const favoriteOnly = searchParams?.favorite === 'true';
+  const watchedOnly = searchParams?.watched === 'true';
   const [episodes, channels] = await Promise.all([
     getEpisodes(50, selectedChannel),
     getChannels(),
   ]);
 
-  const grouped = groupEpisodes(episodes);
+  let filtered = episodes;
+  if (favoriteOnly) {
+    filtered = filtered.filter((ep) => ep.favorite);
+  }
+  if (watchedOnly) {
+    filtered = filtered.filter((ep) => ep.watched);
+  }
+  const grouped = groupEpisodes(filtered);
 
   return (
     <>
@@ -22,9 +33,14 @@ export default async function Page({ searchParams }: Props) {
         <h1>Episodes</h1>
       </div>
 
-      <FilterBar channels={channels} selectedChannel={selectedChannel} />
+      <FilterBar
+        channels={channels}
+        selectedChannel={selectedChannel}
+        favoriteOnly={favoriteOnly}
+        watchedOnly={watchedOnly}
+      />
 
-      {episodes.length === 0 && (
+      {filtered.length === 0 && (
         <div className="empty">No episodes yet. Run the worker to fetch podcasts and summaries.</div>
       )}
 

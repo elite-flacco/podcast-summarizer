@@ -37,7 +37,12 @@ export function EpisodeCard({ episode }: Props) {
           </div>
         </div>
       </Link>
-      <EpisodeActions episodeId={episode.id} layout="compact" />
+      <EpisodeActions
+        episodeId={episode.id}
+        layout="compact"
+        watched={episode.watched}
+        favorite={episode.favorite}
+      />
     </article>
   );
 }

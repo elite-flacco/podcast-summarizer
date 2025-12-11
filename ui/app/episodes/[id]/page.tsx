@@ -31,7 +31,12 @@ export default async function EpisodePage({ params }: Props) {
             Watch on YouTube
           </Link>
         </div>
-        <EpisodeActions episodeId={episode.id} layout="full" />
+        <EpisodeActions
+          episodeId={episode.id}
+          layout="full"
+          watched={episode.watched}
+          favorite={episode.favorite}
+        />
       </div>
 
       <div className="summary-block">

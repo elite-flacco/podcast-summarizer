@@ -120,7 +120,7 @@ export async function getEpisodeById(id: string): Promise<Episode | null> {
     throw new Error(`Failed to load video: ${videoError.message}`);
   }
 
-  const [{ data: summary, error: summaryError }, { data: channel, error: channelError }] =
+  const [{ data: summary, error: summaryError }, { data: channel, error: channelError }, { data: flag, error: flagError }] =
     await Promise.all([
       supabase
         .from('summaries')
@@ -128,6 +128,7 @@ export async function getEpisodeById(id: string): Promise<Episode | null> {
         .eq('video_id', id)
         .maybeSingle(),
       supabase.from('channels').select<ChannelRow>('id, title').eq('id', video.channel_id).maybeSingle(),
+      supabase.from('episode_flags').select<EpisodeFlag>('video_id, watched, favorite').eq('video_id', id).maybeSingle(),
     ]);
 
   if (summaryError) {
@@ -136,6 +137,10 @@ export async function getEpisodeById(id: string): Promise<Episode | null> {
 
   if (channelError) {
     throw new Error(`Failed to load channel: ${channelError.message}`);
+  }
+
+  if (flagError) {
+    throw new Error(`Failed to load episode flags: ${flagError.message}`);
   }
 
   return {
@@ -150,6 +155,8 @@ export async function getEpisodeById(id: string): Promise<Episode | null> {
     highlights: summary?.highlights ?? [],
     keyTopics: summary?.key_topics ?? [],
     youtubeUrl: `https://www.youtube.com/watch?v=${video.id}`,
+    watched: flag?.watched ?? false,
+    favorite: flag?.favorite ?? false,
   };
 }
 
