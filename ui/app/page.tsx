@@ -29,24 +29,25 @@ export default async function Page({ searchParams }: Props) {
 
   return (
     <>
-      <div className="page-title">
-        <h1>Episodes</h1>
-      </div>
-
-      <FilterBar
+      <div className='page-header'>
+        <h1  className="page-title">Library</h1>
+        <FilterBar
         channels={channels}
         selectedChannel={selectedChannel}
         favoriteOnly={favoriteOnly}
         watchedOnly={watchedOnly}
       />
+      </div>
+
+
 
       {filtered.length === 0 && (
-        <div className="empty">No episodes yet. Run the worker to fetch podcasts and summaries.</div>
+        <div className="empty">Your rack is empty. Run the worker to start building your collection.</div>
       )}
 
       {grouped.thisWeek.length > 0 && (
         <section className="episode-section">
-          <div className="section-heading">This Week</div>
+          <div className="section-heading">New Releases</div>
           <div className="grid">
             {grouped.thisWeek.map((episode) => (
               <EpisodeCard key={episode.id} episode={episode} />
@@ -57,7 +58,7 @@ export default async function Page({ searchParams }: Props) {
 
       {grouped.lastWeek.length > 0 && (
         <section className="episode-section">
-          <div className="section-heading">Last Week</div>
+          <div className="section-heading">Just Added</div>
           <div className="grid">
             {grouped.lastWeek.map((episode) => (
               <EpisodeCard key={episode.id} episode={episode} />
@@ -68,7 +69,7 @@ export default async function Page({ searchParams }: Props) {
 
       {grouped.earlier.length > 0 && (
         <section className="episode-section">
-          <div className="section-heading">Earlier</div>
+          <div className="section-heading">Back Catalog</div>
           <div className="grid">
             {grouped.earlier.map((episode) => (
               <EpisodeCard key={episode.id} episode={episode} />

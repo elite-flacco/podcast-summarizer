@@ -55,7 +55,7 @@ export function LoginForm() {
       {error && <div className="error">{error}</div>}
 
       <button type="submit" className="primary" disabled={submitting}>
-        {submitting ? 'Checking…' : 'Unlock'}
+        {submitting ? 'Spinning up…' : 'Start Digging'}
       </button>
     </form>
   );

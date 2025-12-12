@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { getEpisodeById } from '@/lib/data';
 import { formatDate, formatDuration } from '@/lib/format';
 import { EpisodeActions } from '@/components/EpisodeActions';
@@ -28,7 +30,8 @@ export default async function EpisodePage({ params }: Props) {
           <div className="pill">{formatDate(episode.publishedAt)}</div>
           <div className="pill">{formatDuration(episode.durationMinutes)}</div>
           <Link className="primary" href={episode.youtubeUrl} target="_blank" rel="noreferrer">
-            Watch on YouTube
+            <ExternalLink size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+            Play on YouTube
           </Link>
         </div>
         <EpisodeActions
@@ -40,13 +43,13 @@ export default async function EpisodePage({ params }: Props) {
       </div>
 
       <div className="summary-block">
-        <h2>AI Summary</h2>
-        <p className="summary-text">{episode.summary ?? 'No summary yet for this episode.'}</p>
+        <h2>Liner Notes</h2>
+        <p className="summary-text">{episode.summary ?? 'No liner notes yet for this record.'}</p>
       </div>
 
       {episode.highlights.length > 0 && (
         <div className="summary-block">
-          <h3>Highlights</h3>
+          <h3>Track Highlights</h3>
           <ul className="highlights">
             {episode.highlights.map((item) => (
               <li key={item}>{item}</li>
@@ -57,7 +60,7 @@ export default async function EpisodePage({ params }: Props) {
 
       {episode.keyTopics.length > 0 && (
         <div className="summary-block">
-          <h3>Key Topics</h3>
+          <h3>Genres & Topics</h3>
           <div className="badges">
             {episode.keyTopics.map((topic) => (
               <span key={topic} className="badge">
@@ -70,7 +73,8 @@ export default async function EpisodePage({ params }: Props) {
 
       <div className="back-link">
         <Link href="/" className="ghost-button">
-          {'<'}- Back to episodes
+          <ArrowLeft size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+          Back to the crate
         </Link>
       </div>
     </div>

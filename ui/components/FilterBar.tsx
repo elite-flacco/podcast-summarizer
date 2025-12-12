@@ -47,7 +47,7 @@ export function FilterBar({ channels, selectedChannel, favoriteOnly = false, wat
   return (
     <div className="filter-bar">
       <label className="filter-label" htmlFor="channel">
-        Filter by channel
+        Filter by artist
       </label>
       <select
         id="channel"
@@ -56,7 +56,7 @@ export function FilterBar({ channels, selectedChannel, favoriteOnly = false, wat
         value={selectedChannel ?? ''}
         onChange={(e) => handleChange(e.target.value)}
         >
-          <option value="">All channels</option>
+          <option value="">All</option>
           {channels.map((channel) => (
             <option key={channel.id} value={channel.id}>
               {channel.title}
@@ -70,7 +70,7 @@ export function FilterBar({ channels, selectedChannel, favoriteOnly = false, wat
         onClick={handleFavoriteToggle}
         aria-pressed={favoriteOnly}
       >
-        {favoriteOnly ? 'All' : 'Show favorites'}
+        {favoriteOnly ? 'Show All' : 'Favorites'}
       </button>
 
       <button
@@ -79,7 +79,7 @@ export function FilterBar({ channels, selectedChannel, favoriteOnly = false, wat
         onClick={handleWatchedToggle}
         aria-pressed={watchedOnly}
       >
-        {watchedOnly ? 'All' : 'Show watched'}
+        {watchedOnly ? 'Show All' : 'Played ✓'}
       </button>
     </div>
   );

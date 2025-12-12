@@ -1,14 +1,64 @@
+/* ==========================================================================
+   CD Store Theme
+   Cool, plastic, iridescent — like a 90s/2000s music store
+   ========================================================================== */
+
 :root {
   color-scheme: light;
-  --bg: #0e131f;
-  --card: #11182a;
-  --card-border: #1b2436;
-  --text: #e7ecf7;
-  --muted: #9fb0cc;
-  --accent: #7dd1ff;
-  --accent-strong: #46a7ff;
-  --surface: rgba(255, 255, 255, 0.04);
-  --shadow: 0 12px 50px rgba(0, 0, 0, 0.35);
+
+  /* Cool plastic backgrounds */
+  --bg: #eef1f6;
+  --sleeve: #e8eaed;
+  --surface: #ffffff;
+
+  /* Plastic/jewel case borders */
+  --border: #d1d5db;
+  --border-shine: rgba(255, 255, 255, 0.8);
+
+  /* Text - cool grays */
+  --text: #1f2937;
+  --text-muted: #6b7280;
+  --text-light: #9ca3af;
+
+  /* Fluid type scale */
+  --font-size-2xs: clamp(0.58rem, 0.54rem + 0.1vw, 0.66rem);
+  --font-size-xs: clamp(0.63rem, 0.58rem + 0.12vw, 0.74rem);
+  --font-size-sm: clamp(0.7rem, 0.63rem + 0.16vw, 0.8rem);
+  --font-size-md: clamp(0.78rem, 0.7rem + 0.18vw, 0.9rem);
+  --font-size-lg: clamp(0.86rem, 0.78rem + 0.2vw, 1rem);
+  --font-size-xl: clamp(1.02rem, 0.92rem + 0.24vw, 1.2rem);
+  --font-size-2xl: clamp(1.2rem, 1.06rem + 0.28vw, 1.4rem);
+  --font-size-3xl: clamp(1.45rem, 1.28rem + 0.32vw, 1.65rem);
+
+  /* Primary accent - electric indigo */
+  --accent: #6366f1;
+  --accent-soft: rgba(99, 102, 241, 0.12);
+  --accent-hover: #4f46e5;
+
+  /* Secondary accent - hot pink */
+  --pink: #ec4899;
+  --pink-soft: rgba(236, 72, 153, 0.12);
+
+  /* Holographic gradient */
+  --holo: linear-gradient(
+    135deg,
+    #a78bfa 0%,
+    #38bdf8 25%,
+    #34d399 50%,
+    #fbbf24 75%,
+    #f472b6 100%
+  );
+
+  /* CD/disc colors */
+  --disc: linear-gradient(145deg, #f1f4f9 0%, #d7deea 48%, #f7f9fc 100%);
+  --disc-shine: linear-gradient(120deg, rgba(255, 255, 255, 0) 35%, rgba(255, 255, 255, 0.6) 52%, rgba(148, 163, 184, 0.4) 62%, rgba(255, 255, 255, 0) 75%);
+
+  /* Shadows - cooler tones */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --shadow-case: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --shadow-lifted: 0 12px 32px rgba(0, 0, 0, 0.18);
 }
 
 *,
@@ -22,11 +72,23 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background: radial-gradient(circle at 20% 20%, rgba(125, 209, 255, 0.08), transparent 25%),
-    radial-gradient(circle at 80% 0%, rgba(70, 167, 255, 0.07), transparent 25%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans), 'Space Grotesk', sans-serif;
+}
+
+/* Subtle grid pattern - like store shelving */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image:
+    linear-gradient(90deg, var(--text) 1px, transparent 1px),
+    linear-gradient(var(--text) 1px, transparent 1px);
+  background-size: 40px 40px;
+  z-index: 0;
 }
 
 a {
@@ -34,10 +96,14 @@ a {
   text-decoration: none;
 }
 
+/* ==========================================================================
+   App Shell
+   ========================================================================== */
+
 .app-shell {
-  max-width: 1520px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 32px 20px 40px;
+  padding: 24px 24px 60px;
 }
 
 .app-header {
@@ -45,345 +111,727 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 8px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
+/* CD disc logo mark */
 .brand-mark {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+  border-radius: 50%;
+  background: var(--disc);
   display: grid;
   place-items: center;
-  font-weight: 700;
-  color: var(--bg);
-  letter-spacing: 0.5px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Holographic shine on disc */
+.brand-mark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--holo);
+  opacity: 0.3;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.2; transform: rotate(0deg); }
+  50% { opacity: 0.4; transform: rotate(180deg); }
+}
+
+.brand-mark svg {
+  position: relative;
+  z-index: 1;
+  color: var(--text-muted);
 }
 
 .brand-title {
-  font-size: 18px;
+  font-size: var(--font-size-xl);
   font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text);
 }
 
 .brand-subtitle {
-  font-size: 13px;
-  color: var(--muted);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-top: 1px;
 }
 
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .ghost-button {
   padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  border: 1px solid var(--border);
   background: var(--surface);
-  color: var(--text);
-  font-weight: 600;
-  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: var(--font-size-md);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .ghost-button:hover {
   border-color: var(--accent);
-  background: rgba(125, 209, 255, 0.08);
-  transform: translateY(-1px);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .app-main {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .app-footer {
-  margin-top: 32px;
-  color: var(--muted);
-  font-size: 13px;
+  margin-top: 48px;
+  color: var(--text-light);
+  font-size: var(--font-size-sm);
   text-align: center;
 }
 
+/* ==========================================================================
+   Page Elements
+   ========================================================================== */
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+}
 .page-title {
+  margin: 0;
   display: flex;
   align-items: baseline;
   gap: 12px;
   flex-wrap: wrap;
+  font-size: var(--font-size-2xl);
 }
 
 .page-title h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.3px;
+  color: var(--text);
 }
 
 .page-title span {
-  color: var(--muted);
-  font-size: 14px;
+  color: var(--text-muted);
+  font-size: var(--font-size-md);
 }
+
+/* ==========================================================================
+   Episode Grid
+   ========================================================================== */
 
 .grid {
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-}
-
-.episode-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  background: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.episode-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(125, 209, 255, 0.5);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
-}
-
-.episode-link {
-  display: grid;
-  gap: 8px;
-}
-
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  background: var(--surface);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
-  padding: 10px 12px;
-}
-
-.filter-label {
-  font-weight: 600;
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.filter-select {
-  padding: 8px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--card-border);
-  background: var(--card);
-  color: var(--text);
-  min-width: 220px;
-  outline: none;
-}
-
-.toggle-btn {
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--card-border);
-  background: var(--surface);
-  color: var(--text);
-  font-weight: 600;
-  cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
-}
-
-.toggle-btn:hover {
-  border-color: var(--accent);
-  background: rgba(125, 209, 255, 0.08);
-  transform: translateY(-1px);
-}
-
-.toggle-btn.active {
-  border-color: var(--accent-strong);
-  background: rgba(125, 209, 255, 0.12);
-  color: var(--accent-strong);
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
 .episode-section {
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .section-heading {
-  font-weight: 700;
-  color: var(--text);
-  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
 }
 
+/* ==========================================================================
+   Episode Card - Jewel Case Style
+   ========================================================================== */
+
+.episode-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  /* box-shadow: var(--shadow-case); */
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  position: relative;
+}
+
+.episode-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lifted);
+}
+
+.episode-link {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
+}
+
+/* CD case insert area */
 .episode-thumb {
   position: relative;
   width: 100%;
-  height: 110px;
-  background: var(--card);
+  aspect-ratio: 1;
+  max-width: none;
+  margin: 0;
+  background: linear-gradient(180deg, #fbfcff 0%, #f3f6fb 100%);
+  padding: 2px;
   overflow: hidden;
+  border: 1px solid #dfe3ea;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
 }
 
-.episode-thumb img {
+.case-spine {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.72) 0px,
+      rgba(255, 255, 255, 0.72) 3px,
+      rgba(0, 0, 0, 0.4) 4px,
+      rgba(0, 0, 0, 0.2) 5px
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(15, 23, 42, 0.06));
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  z-index: 100;
+}
+
+/* Plastic shine on the case */
+.episode-thumb::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    /* main diagonal shine */ linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 45%, rgba(255, 255, 255, 0.18) 55%, rgba(255, 255, 255, 0) 70%),
+    /* left edge shadow */ linear-gradient(90deg, rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0)) left / 12px 100% no-repeat,
+    /* top highlight */ linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0)) top / 100% 14px no-repeat,
+    /* top latches */ linear-gradient(90deg, transparent 0%, transparent 22%, rgba(0, 0, 0, 0.16) 23%, rgba(0, 0, 0, 0.16) 30%, transparent 31%, transparent 68%, rgba(0, 0, 0, 0.16) 69%, rgba(0, 0, 0, 0.16) 76%, transparent 77%, transparent 100%) top / auto 7px no-repeat,
+    /* bottom latches */ linear-gradient(90deg, transparent 0%, transparent 22%, rgba(0, 0, 0, 0.16) 23%, rgba(0, 0, 0, 0.16) 30%, transparent 31%, transparent 68%, rgba(0, 0, 0, 0.16) 69%, rgba(0, 0, 0, 0.16) 76%, transparent 77%, transparent 100%) bottom / auto 7px no-repeat;
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Bottom lip */
+.episode-thumb::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 10px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0));
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Full-disc art */
+.cd-face {
   width: 100%;
   height: 100%;
+  position: relative;
+  display: grid;
+  place-items: center;
+  will-change: transform;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6), rgba(234, 240, 248, 0.2) 55%, rgba(0, 0, 0, 0.02) 75%, rgba(255, 255, 255, 0.25) 100%),
+    conic-gradient(from 20deg, rgba(255, 255, 255, 0.35), rgba(221, 231, 244, 0.4), rgba(255, 255, 255, 0.3));
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.08),
+    inset 0 0 16px rgba(0, 0, 0, 0.08);
+}
+
+.cd-face::before {
+  content: '';
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 60%);
+  mix-blend-mode: screen;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.cd-face::after {
+  content: '';
+  position: absolute;
+  width: 20%;
+  height: 20%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #fefefe, #cbd2db),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.25), transparent 60%);
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 5px rgba(255, 255, 255, 0.55),
+    0 0 0 1px rgba(0, 0, 0, 0.12);
+  z-index: 4;
+}
+
+.cd-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
   object-fit: cover;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.6),
+    inset 0 0 18px rgba(0, 0, 0, 0.08),
+    0 6px 14px rgba(0, 0, 0, 0.12);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  transform: translateZ(0);
+}
+
+.episode-card:hover .cd-art {
+  transform: scale(1.01);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.7),
+    inset 0 0 22px rgba(0, 0, 0, 0.12),
+    0 10px 20px rgba(0, 0, 0, 0.14);
+}
+
+/* Spin the disc art on hover */
+.episode-card:hover .cd-face {
+  animation: cdSpin 3s linear infinite;
 }
 
 .episode-badges {
   position: absolute;
-  bottom: 6px;
-  left: 6px;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
   display: flex;
+  justify-content: flex-end;
   gap: 6px;
 }
 
 .episode-body {
-  padding: 0 10px 10px;
-  display: grid;
-  gap: 4px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  flex:1;
+  justify-content: space-between;
+  gap: 6px;
+  background:
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0px, rgba(0, 0, 0, 0.02) 1px, transparent 22px, transparent 28px),
+    linear-gradient(180deg, #fdfdfc 0%, #faf8f4 60%, #f6f4ef 100%);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 1px 6px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.episode-body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0)) left / 10px 100% no-repeat,
+    linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.04)) right / 10px 100% no-repeat,
+    linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0));
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.episode-body::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 22px;
+  height: 22px;
+  background:
+    linear-gradient(135deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0)) top left,
+    linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  clip-path: polygon(100% 0, 0 0, 100% 100%);
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .episode-title {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  letter-spacing: -0.1px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .episode-channel {
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
 }
 
 .episode-meta-line {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--text-light);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
 }
+
+@media (min-width: 720px) {
+  .episode-link {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 247, 250, 0.96));
+    /* box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8); */
+  }
+
+  .episode-thumb {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    order: 2;
+  }
+
+  .case-spine {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    width: 8px;
+  }
+
+  .episode-body {
+    margin-top: 0;
+    height: 100%;
+    border: none;
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 0;
+    padding: 12px;
+    background:
+      repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0px, rgba(0, 0, 0, 0.02) 1px, transparent 22px, transparent 28px),
+      linear-gradient(180deg, #ffffff 0%, #fbfaf7 100%);
+    order: 1;
+  }
+
+  .episode-title {
+    -webkit-line-clamp: 4;
+  }
+}
+
+
+
+/* ==========================================================================
+   Badges - Price tag / sticker style
+   ========================================================================== */
 
 .badges {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .badge {
-  padding: 3px 6px;
-  border-radius: 999px;
-  background: rgba(125, 209, 255, 0.12);
-  color: var(--accent);
-  font-size: 10px;
-  border: 1px solid rgba(125, 209, 255, 0.35);
+  padding: 4px 8px;
+  border-radius: 3px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  font-family: monospace;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
 }
+
+/* Staff pick / favorite sticker */
+.badge-favorite {
+  background: #fef3c7;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+/* Now playing / watched badge */
+.badge-watched {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   Filter Bar
+   ========================================================================== */
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f8fc 45%, #ffffff 100%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 6px 16px rgba(0, 0, 0, 0.07);
+  z-index: 10;
+  position: sticky;
+  top: 8px;
+}
+
+.filter-label {
+  font-weight: 500;
+  color: var(--text-light);
+  font-size: var(--font-size-sm);
+}
+
+.filter-select {
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  min-width: 150px;
+  font-size: var(--font-size-sm);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.filter-select:hover,
+.filter-select:focus {
+  border-color: var(--accent);
+}
+
+.toggle-btn {
+  padding: 7px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.toggle-btn.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+/* ==========================================================================
+   Action Buttons
+   ========================================================================== */
 
 .episode-actions {
   display: flex;
-  gap: 8px;
-  padding: 0 10px 10px;
-  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 0 12px 14px;
 }
 
 .actions-compact {
-  justify-content: flex-start;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .action-btn {
-  width: 30px;
-  height: 30px;
-  justify-content: center;
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
-  padding: 2px;
-  border-radius: 10px;
-  border: 1px solid var(--card-border);
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--border);
   background: var(--surface);
-  color: var(--text);
-  font-size: 12px;
+  color: var(--text-light);
   cursor: pointer;
-  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .action-btn:hover {
   border-color: var(--accent);
-  background: rgba(125, 209, 255, 0.08);
-  transform: translateY(-1px);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .action-btn.active {
-  border-color: var(--accent-strong);
-  background: rgba(125, 209, 255, 0.12);
-  color: var(--accent-strong);
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
 }
 
+/* Favorite button - hot pink */
+.action-btn:first-child.active {
+  border-color: var(--pink);
+  background: var(--pink);
+  color: white;
+}
+
+/* ==========================================================================
+   Content Blocks
+   ========================================================================== */
+
 .content {
-  margin-top: 10px;
+  margin-top: 12px;
   color: var(--text);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: var(--font-size-lg);
+  line-height: 1.7;
 }
 
 .summary {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
 }
 
 .highlights {
-  list-style: disc;
-  padding-left: 18px;
+  list-style: none;
+  padding: 0;
   margin: 0;
-  color: var(--muted);
+}
+
+.highlights li {
+  padding: 10px 0;
+  padding-left: 20px;
+  position: relative;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.highlights li:last-child {
+  border-bottom: none;
+}
+
+.highlights li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 .empty {
   text-align: center;
-  padding: 36px;
-  border: 1px dashed var(--card-border);
+  padding: 48px;
+  border: 1px dashed var(--border);
   border-radius: 12px;
   background: var(--surface);
-  color: var(--muted);
+  color: var(--text-muted);
+  font-size: var(--font-size-lg);
 }
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
 
 .actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-top: 12px;
+  margin-top: 16px;
 }
 
 .primary {
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--accent);
   border: none;
-  color: var(--bg);
-  font-weight: 700;
+  color: white;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
   cursor: pointer;
-  box-shadow: 0 12px 30px rgba(125, 209, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(212, 119, 92, 0.25);
+  transition: all 0.2s ease;
+}
+
+.primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 119, 92, 0.3);
 }
 
 .pill {
-  padding: 6px 10px;
-  border-radius: 10px;
-  background: var(--surface);
-  border: 1px solid var(--card-border);
-  color: var(--muted);
-  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--sleeve);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
 }
 
+/* ==========================================================================
+   Login Page
+   ========================================================================== */
+
 .login-card {
-  max-width: 420px;
+  max-width: 380px;
   margin: 80px auto;
-  padding: 20px;
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
 }
 
 .login-form {
   display: grid;
-  gap: 12px;
+  gap: 16px;
+  margin-top: 20px;
 }
 
 .field {
@@ -392,73 +840,197 @@ a {
 }
 
 .field label {
-  font-weight: 600;
+  font-weight: 500;
+  font-size: var(--font-size-md);
+  color: var(--text-muted);
 }
 
 .input {
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--card-border);
-  background: var(--bg);
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
   color: var(--text);
+  font-size: var(--font-size-lg);
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(125, 209, 255, 0.2);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.input::placeholder {
+  color: var(--text-light);
 }
 
 .error {
-  color: #ff98a6;
-  font-size: 13px;
+  color: #d4564c;
+  font-size: var(--font-size-md);
+  padding: 10px 12px;
+  background: rgba(212, 86, 76, 0.08);
+  border-radius: 8px;
+  border: 1px solid rgba(212, 86, 76, 0.2);
 }
+
+/* ==========================================================================
+   Episode Detail Page
+   ========================================================================== */
 
 .episode-page {
   display: grid;
-  gap: 18px;
+  gap: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .episode-hero {
-  display: grid;
-  gap: 12px;
+  display: flex;
+  justify-content: space-between;
 }
 
+/* Jewel case style for detail page */
 .hero-img {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: 14px;
-  border: 1px solid var(--card-border);
-  box-shadow: var(--shadow);
+  max-width: 280px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  border-radius: 4px;
   overflow: hidden;
+  box-shadow: var(--shadow-case);
+  border: 1px solid var(--border);
 }
 
 .hero-img img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+}
+
+/* Plastic shine on jewel case */
+.hero-img::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.15) 45%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0.15) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Spine on left edge */
+.hero-img::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.85) 0px,
+      rgba(255, 255, 255, 0.85) 3px,
+      rgba(0, 0, 0, 0.08) 4px,
+      rgba(0, 0, 0, 0.08) 5px
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(15, 23, 42, 0.08));
+  z-index: 3;
 }
 
 .episode-meta {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 
 .summary-block {
   background: var(--surface);
-  border: 1px solid var(--card-border);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 14px;
-  box-shadow: var(--shadow);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.summary-block h2,
+.summary-block h3 {
+  margin: 0 0 12px;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .summary-text {
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.7;
+  color: var(--text);
 }
 
 .back-link {
-  margin-top: 4px;
+  margin-top: 8px;
+}
+
+@keyframes discSweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cdSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 16px 16px 40px;
+  }
+
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-select {
+    min-width: 100%;
+  }
+
+  .page-title h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .hero-img {
+    max-width: 220px;
+  }
 }
