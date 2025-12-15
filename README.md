@@ -554,12 +554,12 @@ The UI is read-only: it lists recent videos, summaries, key topics, and links ou
 
 **UI environment variables**
 
-| Variable                     | Description                                                            |
-| ---------------------------- | ---------------------------------------------------------------------- |
-| `SUPABASE_URL`               | Supabase project URL (same project the worker writes to)               |
-| `SUPABASE_SERVICE_ROLE_KEY`  | Service role key (used server-side only; never shipped to the client)  |
-| `AUTH_TOKEN`                 | Shared secret that gates every page via middleware and a login form    |
-| `SITE_NAME`                  | Optional branding for the header/footer; defaults to `My Podcasts`        |
+| Variable                    | Description                                                           |
+| --------------------------- | --------------------------------------------------------------------- |
+| `SUPABASE_URL`              | Supabase project URL (same project the worker writes to)              |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (used server-side only; never shipped to the client) |
+| `AUTH_TOKEN`                | Shared secret that gates every page via middleware and a login form   |
+| `SITE_NAME`                 | Optional branding for the header/footer; defaults to `My Podcasts`    |
 
 ### UI watched/favorite flags
 

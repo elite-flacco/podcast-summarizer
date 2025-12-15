@@ -41,6 +41,12 @@ jobs:
     name: UI (Next.js)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      AUTH_TOKEN: test-ci-token
+      SUPABASE_URL: https://example.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: supabase-key
+      SITE_NAME: CI Preview
+      NEXT_TELEMETRY_DISABLED: 1
     defaults:
       run:
         working-directory: ui
