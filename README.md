@@ -1,8 +1,12 @@
-# Podcast Summarizer
+# Podcast Summarizer 🎧
 
 Automated process that pulls your YouTube podcasts, transcribes them, and drops AI-generated summaries into a Google Doc.
 
-## Overview
+Optionally deploy a custom UI to view your episodes and summaries.
+
+![UI preview](docs/ui-preview.png)
+
+## Overview 🌟
 
 This worker automatically:
 
@@ -11,7 +15,7 @@ This worker automatically:
 - Generates rich AI summaries using GPT-5
 - Syncs everything to a beautifully formatted Google Docs document
 
-## Features
+## Features 🚀
 
 - **Automated Daily Sync**: Runs via GitHub Actions, self-hosted runner, or local cron
 - **Single-User Model**: Fork and configure with your own credentials
@@ -22,40 +26,7 @@ This worker automatically:
 - **Privacy-Friendly**: Your personal channel list stays private (gitignored)
 - **Flexible Deployment**: Run on GitHub Actions, self-hosted runner, or local machine via cron
 
-## Optional UI (secure viewer)
-
-Browse episodes and AI summaries behind a single shared access token. The UI lives in `ui/` and reads directly from your Supabase tables using the service role key on the server only.
-
-1. `cd ui && cp .env.example .env`
-2. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a strong `AUTH_TOKEN` (this gates all pages). Optionally set `SITE_NAME`.
-3. Install and run locally: `npm install` (first time) then `npm run dev`
-4. Build for deploy: `npm run build && npm start` or deploy to Vercel/Fly/Netlify with the same env vars. Keep `AUTH_TOKEN` secret.
-
-The UI is read-only: it lists recent videos, summaries, key topics, and links out to YouTube.
-
-### UI watched/favorite flags
-
-To persist watched/favorite state in Supabase, add this table (service_role bypasses RLS):
-
-```sql
-create table if not exists episode_flags (
-  video_id text primary key references videos(id) on delete cascade,
-  watched boolean not null default false,
-  favorite boolean not null default false,
-  updated_at timestamptz not null default now()
-);
-
--- Harden: only allow service_role (what the UI uses) to read/write
-alter table episode_flags enable row level security;
-create policy "Service role only" on episode_flags
-  for all
-  using (auth.role() = 'service_role')
-  with check (auth.role() = 'service_role');
-```
-
-The UI writes to `episode_flags` via `/api/flags` using the service role key server-side; nothing is stored in the browser.
-
-## Prerequisites
+## Prerequisites 🛠️
 
 - Node.js 20+
 - Supabase account (free tier is sufficient)
@@ -63,7 +34,7 @@ The UI writes to `episode_flags` via `/api/flags` using the service role key ser
 - OpenAI API key (GPT-5 access recommended; Whisper API used for transcription fallback)
 - Google Cloud service account with Docs API access (free)
 
-## Setup
+## Setup 🧭
 
 ### 1. Fork/Clone the Repository
 
@@ -570,7 +541,49 @@ Nov 27, 2025 • 1h 30m
 | `DAYS_TO_LOOK_BACK`         | Only process videos from last N days (default: 30)            |
 | `MAX_RESULTS_PER_CHANNEL`   | Max videos to fetch per channel (default: 10)                 |
 
-## Cost Estimate
+## Optional UI 🛡️
+
+Browse episodes and AI summaries behind a single shared access token. The UI lives in `ui/` and reads directly from your Supabase tables using the service role key on the server only.
+
+1. `cd ui && cp .env.example .env`
+2. Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and a strong `AUTH_TOKEN` (this gates all pages). Optionally set `SITE_NAME` (defaults to **My Podcasts**).
+3. Install and run locally: `npm install` (first time) then `npm run dev`
+4. Build for deploy: `npm run build && npm start` or deploy to Vercel/Fly/Netlify with the same env vars. Keep `AUTH_TOKEN` secret.
+
+The UI is read-only: it lists recent videos, summaries, key topics, and links out to YouTube.
+
+**UI environment variables**
+
+| Variable                     | Description                                                            |
+| ---------------------------- | ---------------------------------------------------------------------- |
+| `SUPABASE_URL`               | Supabase project URL (same project the worker writes to)               |
+| `SUPABASE_SERVICE_ROLE_KEY`  | Service role key (used server-side only; never shipped to the client)  |
+| `AUTH_TOKEN`                 | Shared secret that gates every page via middleware and a login form    |
+| `SITE_NAME`                  | Optional branding for the header/footer; defaults to `My Podcasts`        |
+
+### UI watched/favorite flags
+
+To persist watched/favorite state in Supabase, add this table (service_role bypasses RLS):
+
+```sql
+create table if not exists episode_flags (
+  video_id text primary key references videos(id) on delete cascade,
+  watched boolean not null default false,
+  favorite boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+
+-- Harden: only allow service_role (what the UI uses) to read/write
+alter table episode_flags enable row level security;
+create policy "Service role only" on episode_flags
+  for all
+  using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
+```
+
+The UI writes to `episode_flags` via `/api/flags` using the service role key server-side; nothing is stored in the browser.
+
+## Cost Estimate 💰
 
 **Monthly (10 channels, ~50 new videos/month):**
 
@@ -583,7 +596,7 @@ Nov 27, 2025 • 1h 30m
 
 **Total: ~$25-70/month** (OpenAI only, varies based on caption availability)
 
-## Troubleshooting
+## Troubleshooting 🧩
 
 ### "Missing required environment variable"
 
@@ -618,7 +631,7 @@ YouTube blocks GitHub Actions hosted runner IPs. See [Deployment Options](#10-de
 - Ensure Actions are enabled in repository settings
 - Verify cron schedule is correct (UTC timezone)
 
-## Development
+## Development 🧪
 
 ```bash
 # Install dependencies
