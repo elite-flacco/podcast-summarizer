@@ -8,13 +8,20 @@ updates:
       prefix: "chore"
       include: "scope"
     groups:
-      minor-and-patch:
+      react-minor-and-patch:
         patterns:
           - "react"
           - "react-dom"
         update-types:
           - "minor"
           - "patch"
+      eslint-stack:
+        patterns:
+          - "eslint"
+          - "eslint-config-next"
+          - "@typescript-eslint/*"
+          - "@eslint/*"
+          - "eslint-plugin-*"
   - package-ecosystem: "npm"
     directory: "/ui"
     schedule:
@@ -23,10 +30,17 @@ updates:
       prefix: "chore"
       include: "scope"
     groups:
-      minor-and-patch:
+      react-minor-and-patch:
         patterns:
           - "react"
           - "react-dom"
         update-types:
           - "minor"
           - "patch"
+      eslint-stack:
+        patterns:
+          - "eslint"
+          - "eslint-config-next"
+          - "@typescript-eslint/*"
+          - "@eslint/*"
+          - "eslint-plugin-*"
