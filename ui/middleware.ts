@@ -28,7 +28,10 @@ export function middleware(request: NextRequest) {
   })();
 
   if (!expectedToken) {
-    return NextResponse.json({ error: 'Server missing AUTH_TOKEN' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Server missing AUTH_TOKEN' },
+      { status: 500 }
+    );
   }
 
   const sessionToken = request.cookies.get(SESSION_COOKIE)?.value;

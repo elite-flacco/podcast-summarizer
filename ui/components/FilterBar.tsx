@@ -10,7 +10,12 @@ interface Props {
   watchedOnly?: boolean;
 }
 
-export function FilterBar({ channels, selectedChannel, favoriteOnly, watchedOnly }: Props) {
+export function FilterBar({
+  channels,
+  selectedChannel,
+  favoriteOnly,
+  watchedOnly,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedFromQuery = searchParams?.get('channel') ?? '';

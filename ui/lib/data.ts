@@ -22,12 +22,17 @@ interface ChannelRow {
   title: string;
 }
 
-export async function getEpisodes(limit = 50, channelId?: string): Promise<Episode[]> {
+export async function getEpisodes(
+  limit = 50,
+  channelId?: string
+): Promise<Episode[]> {
   const supabase = getSupabaseServerClient();
 
   let query = supabase
     .from('videos')
-    .select<VideoRow[]>('id, channel_id, title, published_at, thumbnail_url, duration_minutes')
+    .select<
+      VideoRow[]
+    >('id, channel_id, title, published_at, thumbnail_url, duration_minutes')
     .order('published_at', { ascending: false })
     .limit(limit);
 
@@ -46,7 +51,9 @@ export async function getEpisodes(limit = 50, channelId?: string): Promise<Episo
   }
 
   const videoIds = videos.map((video) => video.id);
-  const channelIds = Array.from(new Set(videos.map((video) => video.channel_id)));
+  const channelIds = Array.from(
+    new Set(videos.map((video) => video.channel_id))
+  );
 
   const [
     { data: summaries, error: summariesError },
@@ -57,8 +64,14 @@ export async function getEpisodes(limit = 50, channelId?: string): Promise<Episo
       .from('summaries')
       .select<SummaryRow[]>('video_id, summary, highlights, key_topics')
       .in('video_id', videoIds),
-    supabase.from('channels').select<ChannelRow[]>('id, title').in('id', channelIds),
-    supabase.from('episode_flags').select<EpisodeFlag[]>('video_id, watched, favorite').in('video_id', videoIds),
+    supabase
+      .from('channels')
+      .select<ChannelRow[]>('id, title')
+      .in('id', channelIds),
+    supabase
+      .from('episode_flags')
+      .select<EpisodeFlag[]>('video_id, watched, favorite')
+      .in('video_id', videoIds),
   ]);
 
   if (summariesError) {
@@ -74,7 +87,9 @@ export async function getEpisodes(limit = 50, channelId?: string): Promise<Episo
   }
 
   const summaryMap = new Map<string, SummaryRow>();
-  (summaries || []).forEach((summary) => summaryMap.set(summary.video_id, summary));
+  (summaries || []).forEach((summary) =>
+    summaryMap.set(summary.video_id, summary)
+  );
 
   const channelMap = new Map<string, ChannelRow>();
   (channels || []).forEach((channel) => channelMap.set(channel.id, channel));
@@ -109,7 +124,9 @@ export async function getEpisodeById(id: string): Promise<Episode | null> {
 
   const { data: video, error: videoError } = await supabase
     .from('videos')
-    .select<VideoRow>('id, channel_id, title, published_at, thumbnail_url, duration_minutes')
+    .select<VideoRow>(
+      'id, channel_id, title, published_at, thumbnail_url, duration_minutes'
+    )
     .eq('id', id)
     .single();
 
@@ -120,16 +137,27 @@ export async function getEpisodeById(id: string): Promise<Episode | null> {
     throw new Error(`Failed to load video: ${videoError.message}`);
   }
 
-  const [{ data: summary, error: summaryError }, { data: channel, error: channelError }, { data: flag, error: flagError }] =
-    await Promise.all([
-      supabase
-        .from('summaries')
-        .select<SummaryRow>('video_id, summary, highlights, key_topics')
-        .eq('video_id', id)
-        .maybeSingle(),
-      supabase.from('channels').select<ChannelRow>('id, title').eq('id', video.channel_id).maybeSingle(),
-      supabase.from('episode_flags').select<EpisodeFlag>('video_id, watched, favorite').eq('video_id', id).maybeSingle(),
-    ]);
+  const [
+    { data: summary, error: summaryError },
+    { data: channel, error: channelError },
+    { data: flag, error: flagError },
+  ] = await Promise.all([
+    supabase
+      .from('summaries')
+      .select<SummaryRow>('video_id, summary, highlights, key_topics')
+      .eq('video_id', id)
+      .maybeSingle(),
+    supabase
+      .from('channels')
+      .select<ChannelRow>('id, title')
+      .eq('id', video.channel_id)
+      .maybeSingle(),
+    supabase
+      .from('episode_flags')
+      .select<EpisodeFlag>('video_id, watched, favorite')
+      .eq('video_id', id)
+      .maybeSingle(),
+  ]);
 
   if (summaryError) {
     throw new Error(`Failed to load summary: ${summaryError.message}`);
@@ -162,7 +190,10 @@ export async function getEpisodeById(id: string): Promise<Episode | null> {
 
 export async function getChannels(): Promise<Channel[]> {
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase.from('channels').select<Channel[]>('id, title').order('title');
+  const { data, error } = await supabase
+    .from('channels')
+    .select<Channel[]>('id, title')
+    .order('title');
   if (error) {
     throw new Error(`Failed to load channels: ${error.message}`);
   }

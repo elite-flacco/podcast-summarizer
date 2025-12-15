@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { getEpisodeById } from '@/lib/data';
 import { formatDate, formatDuration } from '@/lib/format';
@@ -29,8 +28,16 @@ export default async function EpisodePage({ params }: Props) {
           <div className="pill">{episode.channelTitle}</div>
           <div className="pill">{formatDate(episode.publishedAt)}</div>
           <div className="pill">{formatDuration(episode.durationMinutes)}</div>
-          <Link className="primary" href={episode.youtubeUrl} target="_blank" rel="noreferrer">
-            <ExternalLink size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+          <Link
+            className="primary"
+            href={episode.youtubeUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <ExternalLink
+              size={14}
+              style={{ marginRight: 6, verticalAlign: 'middle' }}
+            />
             Play on YouTube
           </Link>
         </div>
@@ -44,7 +51,9 @@ export default async function EpisodePage({ params }: Props) {
 
       <div className="summary-block">
         <h2>Liner Notes</h2>
-        <p className="summary-text">{episode.summary ?? 'No liner notes yet for this record.'}</p>
+        <p className="summary-text">
+          {episode.summary ?? 'No liner notes yet for this record.'}
+        </p>
       </div>
 
       {episode.highlights.length > 0 && (
@@ -73,7 +82,10 @@ export default async function EpisodePage({ params }: Props) {
 
       <div className="back-link">
         <Link href="/" className="ghost-button">
-          <ArrowLeft size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+          <ArrowLeft
+            size={14}
+            style={{ marginRight: 6, verticalAlign: 'middle' }}
+          />
           Back to the collection
         </Link>
       </div>

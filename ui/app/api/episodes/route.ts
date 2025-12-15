@@ -6,7 +6,8 @@ export async function GET() {
     const episodes = await getEpisodes();
     return NextResponse.json({ episodes });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to load episodes';
+    const message =
+      error instanceof Error ? error.message : 'Failed to load episodes';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -2,7 +2,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Episode } from '@/lib/types';
 import { formatDate, formatDuration } from '@/lib/format';
-import { EpisodeActions } from './EpisodeActions';
 import { Clock } from 'lucide-react';
 
 interface Props {
@@ -35,15 +34,11 @@ export function EpisodeCard({ episode }: Props) {
           <div>
             <div className="episode-channel">{episode.channelTitle}</div>
             <div className="episode-meta-line">
-
               <span>{formatDate(episode.publishedAt)}</span>
               <div className="episode-duration">
-              <Clock size={12} strokeWidth={2} />
-              <span >
-                {formatDuration(episode.durationMinutes)}
-              </span>
+                <Clock size={12} strokeWidth={2} />
+                <span>{formatDuration(episode.durationMinutes)}</span>
               </div>
-
             </div>
           </div>
         </div>

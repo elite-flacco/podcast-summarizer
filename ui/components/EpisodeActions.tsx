@@ -62,7 +62,9 @@ export function EpisodeActions({
   }
 
   return (
-    <div className={`episode-actions ${layout === 'compact' ? 'actions-compact' : ''}`}>
+    <div
+      className={`episode-actions ${layout === 'compact' ? 'actions-compact' : ''}`}
+    >
       <button
         type="button"
         className={`action-btn ${watched ? 'active' : ''}`}

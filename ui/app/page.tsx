@@ -26,7 +26,9 @@ export default async function Page({ searchParams }: Props) {
   return (
     <>
       {filtered.length === 0 && (
-        <div className="empty">Your rack is empty. Run the worker to start building your collection.</div>
+        <div className="empty">
+          Your rack is empty. Run the worker to start building your collection.
+        </div>
       )}
 
       {grouped.thisWeek.length > 0 && (

@@ -6,7 +6,10 @@ import { FilterBar } from '@/components/FilterBar';
 import { getChannels } from '@/lib/data';
 import './globals.css';
 
-const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-sans' });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
 const siteName = process.env.SITE_NAME || 'The Rack';
 
 export const metadata: Metadata = {
@@ -14,7 +17,11 @@ export const metadata: Metadata = {
   description: 'Browse your podcast collection with AI-powered summaries.',
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const channels = await getChannels();
 
   return (
