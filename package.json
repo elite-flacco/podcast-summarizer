@@ -23,7 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "@danielxceron/youtube-transcript": "^1.2.3",
-    "@supabase/supabase-js": "^2.84.0",
+    "@supabase/supabase-js": "^2.87.3",
     "dotenv": "^17.2.3",
     "googleapis": "^166.0.0",
     "openai": "^6.9.1",
@@ -35,10 +35,10 @@
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
     "eslint": "^9",
-    "prettier": "^3.6.2",
+    "prettier": "^3.7.4",
     "ts-node": "^10",
     "typescript": "^5",
-    "typescript-eslint": "^8.48.1"
+    "typescript-eslint": "^8.50.0"
   },
   "engines": {
     "node": ">=20.0.0"
