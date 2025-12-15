@@ -14,11 +14,7 @@ export default function LoginPage() {
   return (
     <div className="card login-card">
       <div style={{ textAlign: 'center', marginBottom: 24 }}>
-        <Disc3
-          size={48}
-          strokeWidth={1}
-          style={{ color: '#e87a3d', marginBottom: 12 }}
-        />
+        <Disc3 size={48} strokeWidth={1} className="login-disc" />
       </div>
       <div
         className="page-title"
@@ -26,14 +22,7 @@ export default function LoginPage() {
       >
         <h1>The Collection</h1>
       </div>
-      <p
-        style={{
-          textAlign: 'center',
-          color: '#a89580',
-          marginTop: 8,
-          marginBottom: 0,
-        }}
-      >
+      <p className="login-subtitle">
         Enter your access token to access your collection
       </p>
       <LoginForm />
