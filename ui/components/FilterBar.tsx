@@ -10,9 +10,16 @@ interface Props {
   watchedOnly?: boolean;
 }
 
-export function FilterBar({ channels, selectedChannel, favoriteOnly = false, watchedOnly = false }: Props) {
+export function FilterBar({ channels, selectedChannel, favoriteOnly, watchedOnly }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const selectedFromQuery = searchParams?.get('channel') ?? '';
+  const favoriteFromQuery = searchParams?.get('favorite') === 'true';
+  const watchedFromQuery = searchParams?.get('watched') === 'true';
+
+  const resolvedChannel = selectedChannel ?? selectedFromQuery;
+  const favoriteActive = favoriteOnly ?? favoriteFromQuery;
+  const watchedActive = watchedOnly ?? watchedFromQuery;
 
   const handleChange = (value: string) => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
@@ -26,7 +33,7 @@ export function FilterBar({ channels, selectedChannel, favoriteOnly = false, wat
 
   const handleFavoriteToggle = () => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
-    if (favoriteOnly) {
+    if (favoriteActive) {
       params.delete('favorite');
     } else {
       params.set('favorite', 'true');
@@ -36,7 +43,7 @@ export function FilterBar({ channels, selectedChannel, favoriteOnly = false, wat
 
   const handleWatchedToggle = () => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
-    if (watchedOnly) {
+    if (watchedActive) {
       params.delete('watched');
     } else {
       params.set('watched', 'true');
@@ -46,40 +53,37 @@ export function FilterBar({ channels, selectedChannel, favoriteOnly = false, wat
 
   return (
     <div className="filter-bar">
-      <label className="filter-label" htmlFor="channel">
-        Filter by artist
-      </label>
       <select
         id="channel"
         name="channel"
         className="filter-select"
-        value={selectedChannel ?? ''}
+        value={resolvedChannel}
         onChange={(e) => handleChange(e.target.value)}
-        >
-          <option value="">All</option>
-          {channels.map((channel) => (
-            <option key={channel.id} value={channel.id}>
-              {channel.title}
-            </option>
-          ))}
-        </select>
+      >
+        <option value="">All</option>
+        {channels.map((channel) => (
+          <option key={channel.id} value={channel.id}>
+            {channel.title}
+          </option>
+        ))}
+      </select>
 
       <button
         type="button"
-        className={`toggle-btn ${favoriteOnly ? 'active' : ''}`}
+        className={`toggle-btn ${favoriteActive ? 'active' : ''}`}
         onClick={handleFavoriteToggle}
-        aria-pressed={favoriteOnly}
+        aria-pressed={favoriteActive}
       >
-        {favoriteOnly ? 'Show All' : 'Favorites'}
+        {favoriteActive ? 'Show All' : 'Favorites'}
       </button>
 
       <button
         type="button"
-        className={`toggle-btn ${watchedOnly ? 'active' : ''}`}
+        className={`toggle-btn ${watchedActive ? 'active' : ''}`}
         onClick={handleWatchedToggle}
-        aria-pressed={watchedOnly}
+        aria-pressed={watchedActive}
       >
-        {watchedOnly ? 'Show All' : 'Played ✓'}
+        {watchedActive ? 'Show All' : 'Played'}
       </button>
     </div>
   );

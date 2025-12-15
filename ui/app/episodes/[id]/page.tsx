@@ -49,7 +49,7 @@ export default async function EpisodePage({ params }: Props) {
 
       {episode.highlights.length > 0 && (
         <div className="summary-block">
-          <h3>Track Highlights</h3>
+          <h3>Highlights</h3>
           <ul className="highlights">
             {episode.highlights.map((item) => (
               <li key={item}>{item}</li>
@@ -60,7 +60,7 @@ export default async function EpisodePage({ params }: Props) {
 
       {episode.keyTopics.length > 0 && (
         <div className="summary-block">
-          <h3>Genres & Topics</h3>
+          <h3>Key Topics</h3>
           <div className="badges">
             {episode.keyTopics.map((topic) => (
               <span key={topic} className="badge">
@@ -74,7 +74,7 @@ export default async function EpisodePage({ params }: Props) {
       <div className="back-link">
         <Link href="/" className="ghost-button">
           <ArrowLeft size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
-          Back to the crate
+          Back to the collection
         </Link>
       </div>
     </div>

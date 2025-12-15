@@ -1,6 +1,5 @@
 import { EpisodeCard } from '@/components/EpisodeCard';
-import { FilterBar } from '@/components/FilterBar';
-import { getEpisodes, getChannels } from '@/lib/data';
+import { getEpisodes } from '@/lib/data';
 import { Episode } from '@/lib/types';
 
 export const revalidate = 0; // always fetch latest flags and episodes
@@ -13,10 +12,7 @@ export default async function Page({ searchParams }: Props) {
   const selectedChannel = searchParams?.channel;
   const favoriteOnly = searchParams?.favorite === 'true';
   const watchedOnly = searchParams?.watched === 'true';
-  const [episodes, channels] = await Promise.all([
-    getEpisodes(50, selectedChannel),
-    getChannels(),
-  ]);
+  const episodes = await getEpisodes(50, selectedChannel);
 
   let filtered = episodes;
   if (favoriteOnly) {
@@ -29,25 +25,13 @@ export default async function Page({ searchParams }: Props) {
 
   return (
     <>
-      <div className='page-header'>
-        <h1  className="page-title">Library</h1>
-        <FilterBar
-        channels={channels}
-        selectedChannel={selectedChannel}
-        favoriteOnly={favoriteOnly}
-        watchedOnly={watchedOnly}
-      />
-      </div>
-
-
-
       {filtered.length === 0 && (
         <div className="empty">Your rack is empty. Run the worker to start building your collection.</div>
       )}
 
       {grouped.thisWeek.length > 0 && (
         <section className="episode-section">
-          <div className="section-heading">New Releases</div>
+          <div className="section-heading">New Drops</div>
           <div className="grid">
             {grouped.thisWeek.map((episode) => (
               <EpisodeCard key={episode.id} episode={episode} />
@@ -58,7 +42,7 @@ export default async function Page({ searchParams }: Props) {
 
       {grouped.lastWeek.length > 0 && (
         <section className="episode-section">
-          <div className="section-heading">Just Added</div>
+          <div className="section-heading">From Last Week</div>
           <div className="grid">
             {grouped.lastWeek.map((episode) => (
               <EpisodeCard key={episode.id} episode={episode} />

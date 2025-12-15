@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Space_Grotesk } from 'next/font/google';
 import Link from 'next/link';
 import { LogOut, Disc } from 'lucide-react';
+import { FilterBar } from '@/components/FilterBar';
+import { getChannels } from '@/lib/data';
 import './globals.css';
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-sans' });
@@ -12,7 +14,9 @@ export const metadata: Metadata = {
   description: 'Browse your podcast collection with AI-powered summaries.',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const channels = await getChannels();
+
   return (
     <html lang="en">
       <body className={spaceGrotesk.variable}>
@@ -27,9 +31,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div className="brand-subtitle">Browse the collection</div>
               </div>
             </Link>
+            <FilterBar channels={channels} />
             <nav className="nav-actions">
               <Link href="/api/logout" className="ghost-button">
-                <LogOut size={16} strokeWidth={2} />
+                <LogOut size={12} strokeWidth={2} />
               </Link>
             </nav>
           </header>
