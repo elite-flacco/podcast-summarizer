@@ -1,1 +1,1 @@
-export const siteName = process.env.SITE_NAME || 'The Rack';
+export const siteName = process.env.SITE_NAME || 'My Podcasts';
