@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SESSION_COOKIE, requireAuthToken } from './lib/auth';
+import { SESSION_COOKIE, isAuthDisabled, requireAuthToken } from './lib/auth';
 
 const PUBLIC_PATHS = [
   '/login',
@@ -13,6 +13,10 @@ const PUBLIC_PATHS = [
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (isAuthDisabled()) {
+    return NextResponse.next();
+  }
 
   const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
   if (isPublic) {

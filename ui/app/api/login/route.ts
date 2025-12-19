@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
-import { requireAuthToken, setSessionCookie } from '@/lib/auth';
+import { isAuthDisabled, requireAuthToken, setSessionCookie } from '@/lib/auth';
 
 export async function POST(request: Request) {
+  if (isAuthDisabled()) {
+    return NextResponse.json({ success: true, auth: 'disabled' });
+  }
+
   const expectedToken = requireAuthToken();
 
   let providedToken = '';

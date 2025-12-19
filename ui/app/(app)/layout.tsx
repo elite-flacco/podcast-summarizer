@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Disc, LogOut } from 'lucide-react';
 import { FilterBar } from '@/components/FilterBar';
 import { getChannels } from '@/lib/data';
+import { isAuthDisabled } from '@/lib/auth';
 import { siteName } from '@/lib/site';
 
 export default async function AppLayout({
@@ -10,6 +11,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const channels = await getChannels();
+  const authDisabled = isAuthDisabled();
 
   return (
     <div className="app-shell">
@@ -25,9 +27,11 @@ export default async function AppLayout({
         </Link>
         <FilterBar channels={channels} />
         <nav className="nav-actions">
-          <Link href="/api/logout" className="ghost-button">
-            <LogOut size={12} strokeWidth={2} />
-          </Link>
+          {!authDisabled && (
+            <Link href="/api/logout" className="ghost-button">
+              <LogOut size={12} strokeWidth={2} />
+            </Link>
+          )}
         </nav>
       </header>
       <main className="app-main">{children}</main>

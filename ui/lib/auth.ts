@@ -3,6 +3,12 @@ import { NextResponse } from 'next/server';
 
 export const SESSION_COOKIE = 'pod-worker-session';
 
+export function isAuthDisabled(): boolean {
+  return (
+    process.env.AUTH_DISABLED === 'true' || process.env.DEMO_MODE === 'true'
+  );
+}
+
 export function requireAuthToken(): string {
   const token = process.env.AUTH_TOKEN;
   if (!token) {

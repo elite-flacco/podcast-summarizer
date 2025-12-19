@@ -1,9 +1,17 @@
 import { redirect } from 'next/navigation';
 import { Disc3 } from 'lucide-react';
-import { getSessionTokenFromCookies, requireAuthToken } from '@/lib/auth';
+import {
+  getSessionTokenFromCookies,
+  isAuthDisabled,
+  requireAuthToken,
+} from '@/lib/auth';
 import { LoginForm } from './login-form';
 
 export default function LoginPage() {
+  if (isAuthDisabled()) {
+    redirect('/');
+  }
+
   const authToken = requireAuthToken();
   const session = getSessionTokenFromCookies();
 
