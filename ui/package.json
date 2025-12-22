@@ -14,7 +14,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.561.0",
+    "lucide-react": "^0.562.0",
     "next": "14.2.18",
     "react": "18.2.0",
     "react-dom": "18.2.0",
