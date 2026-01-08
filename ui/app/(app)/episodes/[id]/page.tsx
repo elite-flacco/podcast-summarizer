@@ -5,8 +5,7 @@ import { getEpisodeById } from '@/lib/data';
 import { formatDate, formatDuration } from '@/lib/format';
 import { EpisodeActions } from '@/components/EpisodeActions';
 
-// Force dynamic rendering to always fetch fresh data from Supabase
-export const dynamic = 'force-dynamic';
+export const revalidate = 0; // always fetch latest data
 
 interface Props {
   params: { id: string };
@@ -15,6 +14,13 @@ interface Props {
 export default async function EpisodePage({ params }: Props) {
   const { id } = params;
   const episode = await getEpisodeById(id);
+
+  console.log('[Episode Page]', {
+    id,
+    hasSummary: !!episode?.summary,
+    summaryLength: episode?.summary?.length,
+    highlightsCount: episode?.highlights?.length,
+  });
 
   if (!episode) {
     notFound();
