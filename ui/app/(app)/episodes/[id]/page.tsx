@@ -5,6 +5,9 @@ import { getEpisodeById } from '@/lib/data';
 import { formatDate, formatDuration } from '@/lib/format';
 import { EpisodeActions } from '@/components/EpisodeActions';
 
+// Force dynamic rendering to always fetch fresh data from Supabase
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: { id: string };
 }
