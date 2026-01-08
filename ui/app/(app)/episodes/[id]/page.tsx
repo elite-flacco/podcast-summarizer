@@ -15,6 +15,13 @@ export default async function EpisodePage({ params }: Props) {
   const { id } = params;
   const episode = await getEpisodeById(id);
 
+  console.log('[Episode Page]', {
+    id,
+    hasSummary: !!episode?.summary,
+    summaryLength: episode?.summary?.length,
+    highlightsCount: episode?.highlights?.length,
+  });
+
   if (!episode) {
     notFound();
   }
