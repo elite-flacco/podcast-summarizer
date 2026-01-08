@@ -233,11 +233,14 @@ export class PodcastProcessor {
     // Check if transcript already exists in database
     const { data: existingTranscript } = await this.supabase
       .from('transcripts')
-      .select('content, created_at')
+      .select('content, created_at, language')
       .eq('video_id', video.id)
       .maybeSingle();
 
-    if (existingTranscript?.content) {
+    if (
+      existingTranscript?.content &&
+      existingTranscript.language !== 'unavailable'
+    ) {
       this.logger.info(`Using existing transcript for ${video.title}`);
       transcript = existingTranscript.content;
       const { error: transcriptFlagError } = await this.supabase
@@ -384,12 +387,7 @@ export class PodcastProcessor {
       .filter((v: any) => v.has_transcript && v.summaries)
       .map((v) => v.id);
 
-    // Also skip videos where transcript fetch already attempted and marked unavailable
-    const transcriptUnavailable = (data || [])
-      .filter((v: any) => !v.has_transcript && v.transcript_fetched_at)
-      .map((v) => v.id);
-
-    return Array.from(new Set([...processed, ...transcriptUnavailable]));
+    return processed;
   }
 
   /**
