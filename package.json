@@ -28,7 +28,7 @@
     "googleapis": "^169.0.0",
     "openai": "^6.9.1",
     "googleapis": "^169.0.0",
-    "openai": "^6.15.0",
+    "openai": "^6.16.0",
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
