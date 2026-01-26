@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Disc, LogOut } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { FilterBar } from '@/components/FilterBar';
 import { getChannels } from '@/lib/data';
 import { isAuthDisabled } from '@/lib/auth';
@@ -8,7 +9,7 @@ import { siteName } from '@/lib/site';
 export default async function AppLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const channels = await getChannels();
   const authDisabled = isAuthDisabled();

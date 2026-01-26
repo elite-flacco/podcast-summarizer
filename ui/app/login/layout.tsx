@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react';
+
 export default function LoginLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className="login-shell">

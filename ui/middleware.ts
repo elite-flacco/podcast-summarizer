@@ -26,7 +26,7 @@ export function middleware(request: NextRequest) {
   const expectedToken = (() => {
     try {
       return requireAuthToken();
-    } catch (error) {
+    } catch {
       return null;
     }
   })();
