@@ -8,6 +8,7 @@ const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-sans',
 });
+
 export const metadata: Metadata = {
   title: siteName,
   description: 'Browse your podcast collection with AI-powered summaries.',

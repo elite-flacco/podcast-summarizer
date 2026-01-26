@@ -7,13 +7,13 @@ import {
 } from '@/lib/auth';
 import { LoginForm } from './login-form';
 
-export default function LoginPage() {
+export default async function LoginPage() {
   if (isAuthDisabled()) {
     redirect('/');
   }
 
   const authToken = requireAuthToken();
-  const session = getSessionTokenFromCookies();
+  const session = await getSessionTokenFromCookies();
 
   if (session === authToken) {
     redirect('/');
