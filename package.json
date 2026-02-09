@@ -23,10 +23,10 @@
   "license": "MIT",
   "dependencies": {
     "@danielxceron/youtube-transcript": "^1.2.3",
-    "@supabase/supabase-js": "^2.93.0",
+    "@supabase/supabase-js": "^2.93.3",
     "dotenv": "^17.2.3",
     "googleapis": "^170.1.0",
-    "openai": "^6.16.0",
+    "openai": "^6.17.0",
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
@@ -38,7 +38,7 @@
     "prettier": "^3.8.1",
     "ts-node": "^10",
     "typescript": "^5",
-    "typescript-eslint": "^8.53.1"
+    "typescript-eslint": "^8.54.0"
   },
   "engines": {
     "node": ">=20.0.0"
