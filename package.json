@@ -25,7 +25,7 @@
     "@danielxceron/youtube-transcript": "^1.2.3",
     "@supabase/supabase-js": "^2.95.3",
     "dotenv": "^17.2.3",
-    "googleapis": "^170.1.0",
+    "googleapis": "^171.4.0",
     "openai": "^6.17.0",
     "ytdl-core": "^4.11.5"
   },
