@@ -19,8 +19,8 @@ export function requireAuthToken(): string {
   return token;
 }
 
-export function getSessionTokenFromCookies(): string | undefined {
-  return cookies().get(SESSION_COOKIE)?.value;
+export async function getSessionTokenFromCookies(): Promise<string | undefined> {
+  return (await cookies()).get(SESSION_COOKIE)?.value;
 }
 
 export function setSessionCookie(response: NextResponse) {
