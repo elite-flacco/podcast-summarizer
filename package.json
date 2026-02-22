@@ -23,7 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "@danielxceron/youtube-transcript": "^1.2.3",
-    "@supabase/supabase-js": "^2.95.3",
+    "@supabase/supabase-js": "^2.97.0",
     "dotenv": "^17.2.3",
     "googleapis": "^171.4.0",
     "openai": "^6.17.0",
