@@ -7,6 +7,7 @@ import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import nextPlugin from "@next/eslint-plugin-next";
 export default [
+  { ignores: [".next/**"] },
   js.configs.recommended,
   {
     files: ["**/*.{ts,tsx}"],
