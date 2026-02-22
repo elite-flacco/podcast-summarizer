@@ -22,7 +22,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@danielxceron/youtube-transcript": "^1.2.3",
+    "@danielxceron/youtube-transcript": "^1.2.6",
     "@supabase/supabase-js": "^2.97.0",
     "dotenv": "^17.3.1",
     "googleapis": "^171.4.0",
