@@ -5,13 +5,18 @@ import { Episode } from '@/lib/types';
 export const revalidate = 0; // always fetch latest flags and episodes
 
 interface Props {
-  searchParams?: { channel?: string; favorite?: string; watched?: string };
+  searchParams?: Promise<{
+    channel?: string;
+    favorite?: string;
+    watched?: string;
+  }>;
 }
 
 export default async function Page({ searchParams }: Props) {
-  const selectedChannel = searchParams?.channel;
-  const favoriteOnly = searchParams?.favorite === 'true';
-  const watchedOnly = searchParams?.watched === 'true';
+  const resolvedSearchParams = await searchParams;
+  const selectedChannel = resolvedSearchParams?.channel;
+  const favoriteOnly = resolvedSearchParams?.favorite === 'true';
+  const watchedOnly = resolvedSearchParams?.watched === 'true';
   const episodes = await getEpisodes(50, selectedChannel);
 
   let filtered = episodes;

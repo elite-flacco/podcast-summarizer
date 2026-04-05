@@ -8,19 +8,12 @@ import { EpisodeActions } from '@/components/EpisodeActions';
 export const revalidate = 0; // always fetch latest data
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function EpisodePage({ params }: Props) {
-  const { id } = params;
+  const { id } = await params;
   const episode = await getEpisodeById(id);
-
-  console.log('[Episode Page]', {
-    id,
-    hasSummary: !!episode?.summary,
-    summaryLength: episode?.summary?.length,
-    highlightsCount: episode?.highlights?.length,
-  });
 
   if (!episode) {
     notFound();
