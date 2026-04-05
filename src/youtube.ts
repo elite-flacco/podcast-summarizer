@@ -1,13 +1,5 @@
 import { google } from 'googleapis';
-import {
-  YoutubeTranscript,
-  YoutubeTranscriptDisabledError,
-  YoutubeTranscriptNotAvailableError,
-  YoutubeTranscriptNotAvailableLanguageError,
-  YoutubeTranscriptVideoUnavailableError,
-} from '@danielxceron/youtube-transcript';
-import ytdl from 'ytdl-core';
-import { createWriteStream, unlink } from 'fs';
+import { spawn } from 'child_process';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
@@ -41,6 +33,8 @@ export type TranscriptUnavailableReason =
   | 'not_available'
   | 'language_unavailable'
   | 'video_unavailable'
+  | 'request_blocked'
+  | 'ip_blocked'
   | 'unknown';
 
 export class TranscriptUnavailableError extends Error {
@@ -51,6 +45,166 @@ export class TranscriptUnavailableError extends Error {
     super(message);
     this.name = 'TranscriptUnavailableError';
   }
+}
+
+interface PythonRunner {
+  command: string;
+  args: string[];
+}
+
+interface PythonHelperSuccess<T> {
+  ok: true;
+  data: T;
+}
+
+interface PythonHelperFailure {
+  ok: false;
+  error_type?: string;
+  message?: string;
+  reason?: TranscriptUnavailableReason;
+}
+
+type PythonHelperResult<T> = PythonHelperSuccess<T> | PythonHelperFailure;
+
+interface TranscriptFetchData {
+  text: string;
+}
+
+interface AudioDownloadData {
+  file_path: string;
+}
+
+let cachedPythonRunner: PythonRunner | null = null;
+
+function getPythonScriptPath(): string {
+  return join(__dirname, '..', 'scripts', 'youtube_helper.py');
+}
+
+async function resolvePythonRunner(): Promise<PythonRunner> {
+  if (cachedPythonRunner) {
+    return cachedPythonRunner;
+  }
+
+  const envPython = process.env.PYTHON_BIN?.trim();
+  const candidates: PythonRunner[] = envPython
+    ? [{ command: envPython, args: [] }]
+    : process.platform === 'win32'
+      ? [
+          { command: 'python', args: [] },
+          { command: 'py', args: ['-3'] },
+        ]
+      : [
+          { command: 'python3', args: [] },
+          { command: 'python', args: [] },
+        ];
+
+  for (const candidate of candidates) {
+    const available = await new Promise<boolean>((resolve) => {
+      const child = spawn(candidate.command, [...candidate.args, '--version']);
+
+      child.once('error', (error: NodeJS.ErrnoException) => {
+        resolve(error.code !== 'ENOENT' && error.code !== 'UNKNOWN');
+      });
+
+      child.once('exit', (code) => {
+        resolve(code === 0);
+      });
+    });
+
+    if (available) {
+      cachedPythonRunner = candidate;
+      return candidate;
+    }
+  }
+
+  throw new Error(
+    'Python 3 is required for transcript fetching. Set PYTHON_BIN if it is not on PATH.'
+  );
+}
+
+async function runPythonHelper<T>(
+  args: string[],
+  operation: string,
+  timeoutMs: number
+): Promise<T> {
+  const runner = await resolvePythonRunner();
+  const scriptPath = getPythonScriptPath();
+
+  return new Promise<T>((resolve, reject) => {
+    const child = spawn(runner.command, [...runner.args, scriptPath, ...args], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    const timeoutId = setTimeout(() => {
+      child.kill();
+      reject(new Error(`${operation} timed out after ${timeoutMs / 1000}s`));
+    }, timeoutMs);
+
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    child.once('error', (error) => {
+      clearTimeout(timeoutId);
+      reject(
+        new Error(
+          `${operation} failed to start: ${error.message || 'unknown error'}`
+        )
+      );
+    });
+
+    child.once('close', (code) => {
+      clearTimeout(timeoutId);
+
+      const trimmedStdout = stdout.trim();
+      const trimmedStderr = stderr.trim();
+      const payload = trimmedStdout || trimmedStderr;
+
+      if (!payload) {
+        reject(
+          new Error(
+            `${operation} failed with exit code ${code ?? 'unknown'} and no output`
+          )
+        );
+        return;
+      }
+
+      let parsed: PythonHelperResult<T>;
+      try {
+        parsed = JSON.parse(payload) as PythonHelperResult<T>;
+      } catch {
+        reject(
+          new Error(
+            `${operation} returned invalid output: ${payload.slice(0, 400)}`
+          )
+        );
+        return;
+      }
+
+      if (parsed.ok) {
+        resolve(parsed.data);
+        return;
+      }
+
+      const message =
+        parsed.message ||
+        `${operation} failed with exit code ${code ?? 'unknown'}`;
+
+      if (parsed.reason) {
+        reject(new TranscriptUnavailableError(message, parsed.reason));
+        return;
+      }
+
+      reject(new Error(message));
+    });
+  });
 }
 
 /**
@@ -166,56 +320,20 @@ export async function getChannelDetails(
  * Works for any video with publicly available captions (no auth required)
  */
 export async function getVideoTranscript(videoId: string): Promise<string> {
-  try {
-    // Fetch transcript using the scraping library
-    const transcriptData = await YoutubeTranscript.fetchTranscript(videoId, {
-      lang: 'en', // Prefer English
-    });
+  const transcriptData = await runPythonHelper<TranscriptFetchData>(
+    ['transcript', videoId, '--language', 'en'],
+    `transcript fetch for video ${videoId}`,
+    60000
+  );
 
-    if (!transcriptData || transcriptData.length === 0) {
-      throw new Error('No captions available for this video');
-    }
-
-    // Combine all transcript segments into single text
-    const transcriptText = transcriptData.map((item) => item.text).join(' ');
-
-    return transcriptText;
-  } catch (error: any) {
-    if (error instanceof YoutubeTranscriptDisabledError) {
-      throw new TranscriptUnavailableError(
-        'Captions are disabled for this video',
-        'disabled'
-      );
-    }
-
-    if (error instanceof YoutubeTranscriptNotAvailableLanguageError) {
-      throw new TranscriptUnavailableError(
-        'Requested language is not available for this video',
-        'language_unavailable'
-      );
-    }
-
-    if (error instanceof YoutubeTranscriptNotAvailableError) {
-      throw new TranscriptUnavailableError(
-        'No captions are available for this video',
-        'not_available'
-      );
-    }
-
-    if (error instanceof YoutubeTranscriptVideoUnavailableError) {
-      throw new TranscriptUnavailableError(
-        'Video is unavailable or private',
-        'video_unavailable'
-      );
-    }
-
-    console.error('Error fetching transcript:', error);
-    if (error instanceof Error) {
-      throw error;
-    }
-
-    throw new Error('Failed to fetch transcript for video');
+  if (!transcriptData.text.trim()) {
+    throw new TranscriptUnavailableError(
+      'No captions are available for this video',
+      'not_available'
+    );
   }
+
+  return transcriptData.text;
 }
 
 /**
@@ -237,26 +355,16 @@ export function parseDuration(duration: string): number {
  * Download YouTube video audio to a temporary file
  */
 export async function downloadAudio(videoId: string): Promise<string> {
-  const url = `https://www.youtube.com/watch?v=${videoId}`;
-  const outputPath = join(tmpdir(), `yt-audio-${videoId}-${Date.now()}.m4a`);
+  const outputTemplate = join(
+    tmpdir(),
+    `yt-audio-${videoId}-${Date.now()}.%(ext)s`
+  );
 
-  return new Promise((resolve, reject) => {
-    const audioStream = ytdl(url, {
-      filter: 'audioonly',
-      quality: 'highestaudio',
-    }).on('error', (err) => {
-      reject(err);
-    });
+  const downloadData = await runPythonHelper<AudioDownloadData>(
+    ['download-audio', videoId, '--output-template', outputTemplate],
+    `audio download for video ${videoId}`,
+    180000
+  );
 
-    const writeStream = createWriteStream(outputPath);
-    audioStream.pipe(writeStream);
-
-    writeStream.on('finish', () => resolve(outputPath));
-    writeStream.on('error', (err) => {
-      unlink(outputPath, () => {
-        // best-effort cleanup
-      });
-      reject(err);
-    });
-  });
+  return downloadData.file_path;
 }

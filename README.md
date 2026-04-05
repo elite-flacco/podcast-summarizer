@@ -29,6 +29,7 @@ This worker automatically:
 ## Prerequisites 🛠️
 
 - Node.js 20+
+- Python 3.10+
 - Supabase account (free tier is sufficient)
 - YouTube Data API v3 key (free)
 - OpenAI API key (GPT-5 access recommended; Whisper API used for transcription fallback)
@@ -42,6 +43,7 @@ This worker automatically:
 git clone https://github.com/your-username/pod-worker
 cd pod-worker
 npm install
+python -m pip install -r requirements.txt
 ```
 
 ### 2. Configure Channels
@@ -324,7 +326,7 @@ This will:
 
 ### 10. Deployment Options
 
-**Important**: YouTube typically blocks transcript fetching from GitHub Actions hosted runners due to IP-based bot detection. Choose one of these deployment methods:
+**Important**: Transcript fetching relies on Python helpers plus YouTube scraping endpoints, and YouTube typically blocks GitHub Actions hosted runners due to IP-based bot detection. Choose one of these deployment methods:
 
 #### Option A: Self-Hosted GitHub Actions Runner (Recommended)
 
@@ -683,7 +685,7 @@ MIT
 Built using:
 
 - [googleapis](https://github.com/googleapis/google-api-nodejs-client) - YouTube API and Google Docs API
-- [@danielxceron/youtube-transcript](https://github.com/danielxceron/youtube-transcript) - Caption scraping
-- [ytdl-core](https://github.com/fent/node-ytdl-core) - Audio extraction for Whisper
+- [jdepoix/youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api) - Caption scraping via Python
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Audio extraction for Whisper fallback
 - [OpenAI API](https://platform.openai.com/) - GPT-5 summaries and Whisper transcription
 - [Supabase](https://supabase.com/) - Database storage
