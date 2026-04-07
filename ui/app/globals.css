@@ -858,6 +858,47 @@ body::before {
   font-size: var(--font-size-lg);
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.pagination-link {
+  min-width: 92px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.pagination-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.pagination-link-disabled {
+  color: var(--text-light);
+  border-color: var(--border-light);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.pagination-status {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 /* ==========================================================================
    Login Page
    ========================================================================== */

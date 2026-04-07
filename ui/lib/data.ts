@@ -22,10 +22,99 @@ interface ChannelRow {
   title: string;
 }
 
+interface GetEpisodesOptions {
+  limit?: number;
+  offset?: number;
+  channelId?: string;
+  favoriteOnly?: boolean;
+  unwatchedOnly?: boolean;
+}
+
+interface EpisodePage {
+  episodes: Episode[];
+  hasMore: boolean;
+}
+
 export async function getEpisodes(
-  limit = 50,
-  channelId?: string
+  options: GetEpisodesOptions = {}
 ): Promise<Episode[]> {
+  const { limit, offset = 0, channelId } = options;
+  const { videos } = await fetchVideoBatch({ limit, offset, channelId });
+  return hydrateEpisodes(videos);
+}
+
+export async function getEpisodePage(
+  options: GetEpisodesOptions = {}
+): Promise<EpisodePage> {
+  const {
+    limit = 48,
+    offset = 0,
+    channelId,
+    favoriteOnly = false,
+    unwatchedOnly = false,
+  } = options;
+
+  if (!favoriteOnly && !unwatchedOnly) {
+    const { videos, hasMore } = await fetchVideoBatch({
+      limit: limit + 1,
+      offset,
+      channelId,
+    });
+    const episodes = await hydrateEpisodes(videos.slice(0, limit));
+    return { episodes, hasMore: hasMore || videos.length > limit };
+  }
+
+  const batchSize = Math.max(limit * 2, 100);
+  const matched: Episode[] = [];
+  let scanOffset = 0;
+  let skippedMatches = 0;
+
+  while (true) {
+    const { videos, hasMore } = await fetchVideoBatch({
+      limit: batchSize,
+      offset: scanOffset,
+      channelId,
+    });
+
+    if (videos.length === 0) {
+      return { episodes: matched, hasMore: false };
+    }
+
+    const episodes = await hydrateEpisodes(videos);
+
+    for (const episode of episodes) {
+      if (!matchesEpisodeFilters(episode, { favoriteOnly, unwatchedOnly })) {
+        continue;
+      }
+
+      if (skippedMatches < offset) {
+        skippedMatches += 1;
+        continue;
+      }
+
+      matched.push(episode);
+
+      if (matched.length > limit) {
+        return { episodes: matched.slice(0, limit), hasMore: true };
+      }
+    }
+
+    if (!hasMore) {
+      return { episodes: matched, hasMore: false };
+    }
+
+    scanOffset += videos.length;
+  }
+}
+
+async function fetchVideoBatch({
+  limit,
+  offset = 0,
+  channelId,
+}: Pick<GetEpisodesOptions, 'limit' | 'offset' | 'channelId'>): Promise<{
+  videos: VideoRow[];
+  hasMore: boolean;
+}> {
   const supabase = getSupabaseServerClient();
 
   let query = supabase
@@ -33,8 +122,12 @@ export async function getEpisodes(
     .select(
       'id, channel_id, title, published_at, thumbnail_url, duration_minutes'
     )
-    .order('published_at', { ascending: false })
-    .limit(limit);
+    .order('published_at', { ascending: false });
+
+  if (typeof limit === 'number') {
+    const end = offset + limit - 1;
+    query = query.range(offset, end);
+  }
 
   if (channelId) {
     query = query.eq('channel_id', channelId);
@@ -47,10 +140,17 @@ export async function getEpisodes(
   }
 
   const videos = (videosData ?? []) as VideoRow[];
+  const hasMore = typeof limit === 'number' ? videos.length === limit : false;
 
+  return { videos, hasMore };
+}
+
+async function hydrateEpisodes(videos: VideoRow[]): Promise<Episode[]> {
   if (videos.length === 0) {
     return [];
   }
+
+  const supabase = getSupabaseServerClient();
 
   const videoIds = videos.map((video) => video.id);
   const channelIds = Array.from(
@@ -120,6 +220,24 @@ export async function getEpisodes(
       favorite: flagMap.get(video.id)?.favorite ?? false,
     };
   });
+}
+
+function matchesEpisodeFilters(
+  episode: Episode,
+  {
+    favoriteOnly,
+    unwatchedOnly,
+  }: Pick<GetEpisodesOptions, 'favoriteOnly' | 'unwatchedOnly'>
+) {
+  if (favoriteOnly && !episode.favorite) {
+    return false;
+  }
+
+  if (unwatchedOnly && episode.watched) {
+    return false;
+  }
+
+  return true;
 }
 
 export async function getEpisodeById(id: string): Promise<Episode | null> {

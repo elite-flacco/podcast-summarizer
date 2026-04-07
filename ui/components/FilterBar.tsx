@@ -7,27 +7,28 @@ interface Props {
   channels: Channel[];
   selectedChannel?: string;
   favoriteOnly?: boolean;
-  watchedOnly?: boolean;
+  unwatchedOnly?: boolean;
 }
 
 export function FilterBar({
   channels,
   selectedChannel,
   favoriteOnly,
-  watchedOnly,
+  unwatchedOnly,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedFromQuery = searchParams?.get('channel') ?? '';
   const favoriteFromQuery = searchParams?.get('favorite') === 'true';
-  const watchedFromQuery = searchParams?.get('watched') === 'true';
+  const unwatchedFromQuery = searchParams?.get('unwatched') === 'true';
 
   const resolvedChannel = selectedChannel ?? selectedFromQuery;
   const favoriteActive = favoriteOnly ?? favoriteFromQuery;
-  const watchedActive = watchedOnly ?? watchedFromQuery;
+  const unwatchedActive = unwatchedOnly ?? unwatchedFromQuery;
 
   const handleChange = (value: string) => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
+    params.delete('page');
     if (value) {
       params.set('channel', value);
     } else {
@@ -38,6 +39,7 @@ export function FilterBar({
 
   const handleFavoriteToggle = () => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
+    params.delete('page');
     if (favoriteActive) {
       params.delete('favorite');
     } else {
@@ -46,12 +48,13 @@ export function FilterBar({
     router.push(`/?${params.toString()}`);
   };
 
-  const handleWatchedToggle = () => {
+  const handleUnwatchedToggle = () => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
-    if (watchedActive) {
-      params.delete('watched');
+    params.delete('page');
+    if (unwatchedActive) {
+      params.delete('unwatched');
     } else {
-      params.set('watched', 'true');
+      params.set('unwatched', 'true');
     }
     router.push(`/?${params.toString()}`);
   };
@@ -84,11 +87,11 @@ export function FilterBar({
 
       <button
         type="button"
-        className={`toggle-btn ${watchedActive ? 'active' : ''}`}
-        onClick={handleWatchedToggle}
-        aria-pressed={watchedActive}
+        className={`toggle-btn ${unwatchedActive ? 'active' : ''}`}
+        onClick={handleUnwatchedToggle}
+        aria-pressed={unwatchedActive}
       >
-        {watchedActive ? 'Show All' : 'Played'}
+        {unwatchedActive ? 'Show All' : 'Unwatched'}
       </button>
     </div>
   );

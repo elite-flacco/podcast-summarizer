@@ -11,7 +11,7 @@ const homePageContract: AsyncRoutePage<{
   searchParams?: Promise<{
     channel?: string;
     favorite?: string;
-    watched?: string;
+    unwatched?: string;
   }>;
 }> = HomePage;
 
