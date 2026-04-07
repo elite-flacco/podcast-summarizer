@@ -352,11 +352,11 @@ Best for: Automated scheduling with GitHub Actions while avoiding IP blocks
      - `SUPABASE_SERVICE_ROLE_KEY`
      - `YOUTUBE_API_KEY`
      - `OPENAI_API_KEY`
-     - `OPENAI_MODEL` (optional)
-     - `OPENAI_MAX_OUTPUT_TOKENS` (optional)
-     - `GOOGLE_DOCS_DOCUMENT_ID`
-     - `GOOGLE_DOCS_CLIENT_EMAIL`
-     - `GOOGLE_DOCS_PRIVATE_KEY`
+   - `OPENAI_MODEL` (optional)
+   - `OPENAI_MAX_OUTPUT_TOKENS` (optional)
+   - `GOOGLE_DOCS_DOCUMENT_ID`
+   - `GOOGLE_DOCS_CLIENT_EMAIL`
+   - `GOOGLE_DOCS_PRIVATE_KEY`
 
 3. **Set up self-hosted runner**:
    - Go to your repo Settings → Actions → Runners → New self-hosted runner
@@ -615,7 +615,7 @@ The UI writes to `episode_flags` via `/api/flags` using the service role key ser
 - Video may not have public captions, but Whisper ASR will attempt to transcribe automatically
 - If both caption scraping and Whisper fail, video will be marked as transcript unavailable
 - Video might be age-restricted or private
-- Worker will skip videos where transcription is impossible
+- Worker will skip videos where transcription is impossible, but the overall run now exits with failure so GitHub can notify you
 
 ### Transcript fetching fails in GitHub Actions
 

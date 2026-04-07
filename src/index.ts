@@ -47,6 +47,7 @@ async function main() {
     logger.info(`Channels processed: ${results.channelsProcessed}`);
     logger.info(`Videos processed: ${results.videosProcessed}`);
     logger.info(`Summaries generated: ${results.summariesGenerated}`);
+    logger.info(`Transcript failures: ${results.transcriptFailures.length}`);
 
     if (results.errors.length > 0) {
       logger.warn(`Errors encountered: ${results.errors.length}`);

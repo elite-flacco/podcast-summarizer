@@ -12,11 +12,20 @@ import {
 import { summarizePodcast, transcribeAudioFromFile } from './openai';
 import { unlink } from 'fs/promises';
 
+export interface TranscriptFailure {
+  channelId: string;
+  channelName: string;
+  videoId: string;
+  videoTitle: string;
+  reason: string;
+}
+
 export interface ProcessingResult {
   channelsProcessed: number;
   videosProcessed: number;
   summariesGenerated: number;
   errors: Array<{ channelId?: string; videoId?: string; error: string }>;
+  transcriptFailures: TranscriptFailure[];
 }
 
 /**
@@ -26,6 +35,7 @@ export class PodcastProcessor {
   private readonly SUMMARY_TIMEOUT_MS = 180000;
   private readonly TRANSCRIPT_TIMEOUT_MS = 60000;
   private readonly ASR_TIMEOUT_MS = 240000;
+  private transcriptFailures: TranscriptFailure[] = [];
 
   constructor(
     private config: WorkerConfig,
@@ -38,11 +48,14 @@ export class PodcastProcessor {
    * Run the full processing pipeline
    */
   async run(): Promise<ProcessingResult> {
+    this.transcriptFailures = [];
+
     const results: ProcessingResult = {
       channelsProcessed: 0,
       videosProcessed: 0,
       summariesGenerated: 0,
       errors: [],
+      transcriptFailures: [],
     };
 
     this.logger.info(
@@ -83,6 +96,14 @@ export class PodcastProcessor {
       results.errors.push({ error: error.message });
     }
 
+    results.transcriptFailures = [...this.transcriptFailures];
+    results.errors.push(
+      ...this.transcriptFailures.map((failure) => ({
+        channelId: failure.channelId,
+        videoId: failure.videoId,
+        error: `Transcript fetch failed for "${failure.videoTitle}": ${failure.reason}`,
+      }))
+    );
     return results;
   }
 
@@ -286,6 +307,13 @@ export class PodcastProcessor {
           this.logger.info(`Using Whisper ASR transcript for ${video.title}`);
           transcriptSource = 'asr';
         } catch (asrError: any) {
+          this.transcriptFailures.push({
+            channelId: channel.id,
+            channelName: channel.name,
+            videoId: video.id,
+            videoTitle: video.title,
+            reason: asrError?.message || 'Transcript unavailable',
+          });
           await this.markTranscriptUnavailable(
             video.id,
             asrError?.message || 'Transcript unavailable'
