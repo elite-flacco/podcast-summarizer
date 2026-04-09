@@ -1,9 +1,23 @@
-import { NextResponse } from 'next/server';
-import { getEpisodes } from '@/lib/data';
+import { NextRequest, NextResponse } from 'next/server';
+import { getEpisodes, searchEpisodes } from '@/lib/data';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const episodes = await getEpisodes();
+    const channelId = request.nextUrl.searchParams.get('channel') ?? undefined;
+    const favoriteOnly =
+      request.nextUrl.searchParams.get('favorite') === 'true';
+    const unwatchedOnly =
+      request.nextUrl.searchParams.get('unwatched') === 'true';
+    const query = request.nextUrl.searchParams.get('query')?.trim() ?? '';
+    const episodes = query
+      ? await searchEpisodes({
+          channelId,
+          favoriteOnly,
+          unwatchedOnly,
+          query,
+        })
+      : await getEpisodes({ limit: 200, channelId });
+
     return NextResponse.json({ episodes });
   } catch (error) {
     const message =

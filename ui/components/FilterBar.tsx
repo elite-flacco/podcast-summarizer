@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearch } from '@/components/SearchProvider';
 import { Channel } from '@/lib/types';
 
 interface Props {
@@ -18,6 +19,7 @@ export function FilterBar({
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { query, setQuery } = useSearch();
   const selectedFromQuery = searchParams?.get('channel') ?? '';
   const favoriteFromQuery = searchParams?.get('favorite') === 'true';
   const unwatchedFromQuery = searchParams?.get('unwatched') === 'true';
@@ -25,6 +27,11 @@ export function FilterBar({
   const resolvedChannel = selectedChannel ?? selectedFromQuery;
   const favoriteActive = favoriteOnly ?? favoriteFromQuery;
   const unwatchedActive = unwatchedOnly ?? unwatchedFromQuery;
+
+  const pushParams = (params: URLSearchParams) => {
+    const next = params.toString();
+    router.replace(next ? `/?${next}` : '/');
+  };
 
   const handleChange = (value: string) => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
@@ -34,7 +41,7 @@ export function FilterBar({
     } else {
       params.delete('channel');
     }
-    router.push(`/?${params.toString()}`);
+    pushParams(params);
   };
 
   const handleFavoriteToggle = () => {
@@ -45,7 +52,7 @@ export function FilterBar({
     } else {
       params.set('favorite', 'true');
     }
-    router.push(`/?${params.toString()}`);
+    pushParams(params);
   };
 
   const handleUnwatchedToggle = () => {
@@ -56,11 +63,36 @@ export function FilterBar({
     } else {
       params.set('unwatched', 'true');
     }
-    router.push(`/?${params.toString()}`);
+    pushParams(params);
+  };
+
+  const handleClearSearch = () => {
+    setQuery('');
   };
 
   return (
     <div className="filter-bar">
+      <div className="filter-search">
+        <input
+          type="search"
+          name="query"
+          value={query}
+          className="filter-input"
+          placeholder="Search titles, notes, topics"
+          aria-label="Search episodes"
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {query ? (
+          <button
+            type="button"
+            className="toggle-btn"
+            onClick={handleClearSearch}
+          >
+            Clear
+          </button>
+        ) : null}
+      </div>
+
       <select
         id="channel"
         name="channel"

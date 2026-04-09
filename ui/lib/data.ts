@@ -28,6 +28,7 @@ interface GetEpisodesOptions {
   channelId?: string;
   favoriteOnly?: boolean;
   unwatchedOnly?: boolean;
+  query?: string;
 }
 
 interface EpisodePage {
@@ -105,6 +106,42 @@ export async function getEpisodePage(
 
     scanOffset += videos.length;
   }
+}
+
+export async function searchEpisodes(
+  options: GetEpisodesOptions = {}
+): Promise<Episode[]> {
+  const {
+    channelId,
+    favoriteOnly = false,
+    unwatchedOnly = false,
+    query = '',
+  } = options;
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const episodes = await getEpisodes({ channelId });
+
+  return episodes.filter((episode) => {
+    if (!matchesEpisodeFilters(episode, { favoriteOnly, unwatchedOnly })) {
+      return false;
+    }
+
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    const haystacks = [
+      episode.title,
+      episode.channelTitle,
+      episode.summary ?? '',
+      episode.keyTopics.join(' '),
+      episode.highlights.join(' '),
+    ];
+
+    return haystacks.some((value) =>
+      value.toLowerCase().includes(normalizedQuery)
+    );
+  });
 }
 
 async function fetchVideoBatch({
