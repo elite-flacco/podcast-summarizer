@@ -22,7 +22,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@supabase/supabase-js": "^2.103.0",
+    "@supabase/supabase-js": "^2.104.0",
     "dotenv": "^17.4.2",
     "googleapis": "^171.4.0",
     "openai": "^6.34.0"
