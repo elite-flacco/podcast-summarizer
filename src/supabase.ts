@@ -1,4 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { RealtimeClientOptions } from '@supabase/realtime-js';
+import WebSocket from 'ws';
 
 /**
  * Get Supabase client with service role key
@@ -14,10 +16,15 @@ export function getSupabaseClient(): SupabaseClient {
     );
   }
 
+  const websocketTransport = WebSocket as unknown as RealtimeClientOptions['transport'];
+
   return createClient(supabaseUrl, supabaseKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
+    },
+    realtime: {
+      transport: websocketTransport,
     },
   });
 }
