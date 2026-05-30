@@ -24,7 +24,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
     "dotenv": "^17.4.2",
-    "googleapis": "^171.4.0",
+    "googleapis": "^173.0.0",
     "openai": "^6.39.0",
     "ws": "^8.21.0"
   },
