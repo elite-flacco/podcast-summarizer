@@ -16,7 +16,8 @@ export function getSupabaseClient(): SupabaseClient {
     );
   }
 
-  const websocketTransport = WebSocket as unknown as RealtimeClientOptions['transport'];
+  const websocketTransport =
+    WebSocket as unknown as RealtimeClientOptions['transport'];
 
   return createClient(supabaseUrl, supabaseKey, {
     auth: {
