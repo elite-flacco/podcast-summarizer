@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, Star } from 'lucide-react';
 
@@ -18,27 +18,41 @@ export function EpisodeActions({
   favorite: favoriteInitial = false,
 }: Props) {
   const router = useRouter();
-  const [watched, setWatched] = useState<boolean>(watchedInitial);
-  const [favorite, setFavorite] = useState<boolean>(favoriteInitial);
+  const [optimisticFlags, setOptimisticFlags] = useState<{
+    episodeId: string;
+    watched?: boolean;
+    favorite?: boolean;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    setWatched(Boolean(watchedInitial));
-  }, [watchedInitial]);
-
-  useEffect(() => {
-    setFavorite(Boolean(favoriteInitial));
-  }, [favoriteInitial]);
+  const watched =
+    optimisticFlags?.episodeId === episodeId &&
+    typeof optimisticFlags.watched === 'boolean'
+      ? optimisticFlags.watched
+      : Boolean(watchedInitial);
+  const favorite =
+    optimisticFlags?.episodeId === episodeId &&
+    typeof optimisticFlags.favorite === 'boolean'
+      ? optimisticFlags.favorite
+      : Boolean(favoriteInitial);
 
   const toggleWatched = () => {
     const next = !watched;
-    setWatched(next);
+    setOptimisticFlags((current) => ({
+      episodeId,
+      ...(current?.episodeId === episodeId ? current : null),
+      watched: next,
+    }));
     void persist({ watched: next });
   };
 
   const toggleFavorite = () => {
     const next = !favorite;
-    setFavorite(next);
+    setOptimisticFlags((current) => ({
+      episodeId,
+      ...(current?.episodeId === episodeId ? current : null),
+      favorite: next,
+    }));
     void persist({ favorite: next });
   };
 
@@ -53,9 +67,7 @@ export function EpisodeActions({
       if (!res.ok) throw new Error('Failed to save');
       router.refresh();
     } catch {
-      // rollback on failure
-      if (typeof update.watched === 'boolean') setWatched((prev) => !prev);
-      if (typeof update.favorite === 'boolean') setFavorite((prev) => !prev);
+      setOptimisticFlags(null);
     } finally {
       setSaving(false);
     }

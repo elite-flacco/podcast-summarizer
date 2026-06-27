@@ -26,24 +26,31 @@ export function EpisodesBrowser({
   unwatchedOnly = false,
 }: Props) {
   const { query } = useSearch();
-  const normalizedQuery = query.trim().toLowerCase();
-  const [searchResults, setSearchResults] = useState<Episode[] | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const trimmedQuery = query.trim();
+  const normalizedQuery = trimmedQuery.toLowerCase();
+  const searchKey = [
+    normalizedQuery,
+    selectedChannel ?? '',
+    favoriteOnly ? 'favorite' : '',
+    unwatchedOnly ? 'unwatched' : '',
+  ].join('|');
+  const [searchState, setSearchState] = useState<{
+    key: string;
+    episodes: Episode[];
+    isSearching: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (!normalizedQuery) {
-      setSearchResults(null);
-      setIsSearching(false);
       return;
     }
 
     const controller = new AbortController();
-    setSearchResults(null);
     const timeoutId = window.setTimeout(async () => {
-      setIsSearching(true);
+      setSearchState({ key: searchKey, episodes: [], isSearching: true });
 
       try {
-        const params = new URLSearchParams({ query: query.trim() });
+        const params = new URLSearchParams({ query: trimmedQuery });
 
         if (selectedChannel) {
           params.set('channel', selectedChannel);
@@ -64,17 +71,17 @@ export function EpisodesBrowser({
         }
 
         const data = (await response.json()) as { episodes: Episode[] };
-        setSearchResults(data.episodes);
+        setSearchState({
+          key: searchKey,
+          episodes: data.episodes,
+          isSearching: false,
+        });
       } catch (error) {
         if (controller.signal.aborted) {
           return;
         }
         console.error(error);
-        setSearchResults([]);
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsSearching(false);
-        }
+        setSearchState({ key: searchKey, episodes: [], isSearching: false });
       }
     }, 250);
 
@@ -82,15 +89,27 @@ export function EpisodesBrowser({
       controller.abort();
       window.clearTimeout(timeoutId);
     };
-  }, [favoriteOnly, normalizedQuery, query, selectedChannel, unwatchedOnly]);
+  }, [
+    favoriteOnly,
+    normalizedQuery,
+    searchKey,
+    selectedChannel,
+    trimmedQuery,
+    unwatchedOnly,
+  ]);
+
+  const activeSearchState = searchState?.key === searchKey ? searchState : null;
+  const isSearching = Boolean(
+    normalizedQuery && (!activeSearchState || activeSearchState.isSearching)
+  );
 
   const filtered = useMemo(() => {
     if (normalizedQuery) {
-      return searchResults ?? [];
+      return activeSearchState?.episodes ?? [];
     }
 
     return episodes;
-  }, [episodes, normalizedQuery, searchResults]);
+  }, [activeSearchState?.episodes, episodes, normalizedQuery]);
 
   const grouped = groupEpisodes(filtered);
 
@@ -102,8 +121,8 @@ export function EpisodesBrowser({
 
       {!isSearching && filtered.length === 0 && (
         <div className="empty">
-          {query.trim()
-            ? `No records matched "${query.trim()}". Try a different title, topic, or channel.`
+          {trimmedQuery
+            ? `No records matched "${trimmedQuery}". Try a different title, topic, or channel.`
             : 'Your rack is empty. Run the worker to start building your collection.'}
         </div>
       )}
