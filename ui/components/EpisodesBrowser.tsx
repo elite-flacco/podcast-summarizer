@@ -100,7 +100,7 @@ export function EpisodesBrowser({
 
   const activeSearchState = searchState?.key === searchKey ? searchState : null;
   const isSearching = Boolean(
-    normalizedQuery && (!activeSearchState || activeSearchState.isSearching),
+    normalizedQuery && (!activeSearchState || activeSearchState.isSearching)
   );
 
   const filtered = useMemo(() => {
