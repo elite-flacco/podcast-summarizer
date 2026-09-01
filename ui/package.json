@@ -14,17 +14,17 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.33.0",
-    "next": "16.3.2",
+    "lucide-react": "^1.35.0",
+    "next": "16.3.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "16.3.2",
-    "@types/node": "^26.2.0",
+    "@next/eslint-plugin-next": "16.3.3",
+    "@types/node": "^26.4.0",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
+    "@types/react-dom": "^19.2.5",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.9",
     "eslint-plugin-jsx-a11y": "^6.10.2",
