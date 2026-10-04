@@ -321,7 +321,7 @@ export async function getChannelDetails(
  */
 export async function getVideoTranscript(videoId: string): Promise<string> {
   const transcriptData = await runPythonHelper<TranscriptFetchData>(
-    ['transcript', videoId, '--language', 'en'],
+    ['transcript', '--language', 'en', '--', videoId],
     `transcript fetch for video ${videoId}`,
     60000
   );
@@ -361,7 +361,7 @@ export async function downloadAudio(videoId: string): Promise<string> {
   );
 
   const downloadData = await runPythonHelper<AudioDownloadData>(
-    ['download-audio', videoId, '--output-template', outputTemplate],
+    ['download-audio', '--output-template', outputTemplate, '--', videoId],
     `audio download for video ${videoId}`,
     180000
   );
