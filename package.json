@@ -23,10 +23,11 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.2",
-    "dotenv": "^18.0.5",
-    "googleapis": "^182.0.0",
-    "openai": "^7.27.0",
+    "@supabase/supabase-js": "^2.118.0",
+    "dotenv": "^18.0.9",
+    "google-auth-library": "^11.3.1",
+    "googleapis": "^188.0.0",
+    "openai": "^7.45.1",
     "ws": "^8.22.0"
   },
   "devDependencies": {
@@ -36,10 +37,10 @@
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
     "eslint": "^9",
-    "prettier": "^3.9.9",
+    "prettier": "^3.9.10",
     "ts-node": "^10",
     "typescript": "^7",
-    "typescript-eslint": "^8.71.0"
+    "typescript-eslint": "^8.72.1"
   },
   "engines": {
     "node": ">=20.0.0"
