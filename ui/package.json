@@ -12,26 +12,26 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,md}\""
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.2",
+    "@supabase/supabase-js": "^2.118.0",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.28.0",
-    "next": "16.2.12",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "zod": "^4.4.3"
+    "lucide-react": "^1.65.0",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "16.3.0",
-    "@types/node": "^26.1.2",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
+    "@next/eslint-plugin-next": "16.4.3",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.9",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
-    "globals": "^17.9.0",
-    "prettier": "^3.9.6",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
     "typescript": "^7.0.2"
   },
   "engines": {
